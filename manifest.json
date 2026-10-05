@@ -1,6 +1,6 @@
 {
-  "name": "Fast Trading Log",
-  "short_name": "TradeApp",
+  "name": "Data Trading Weni",
+  "short_name": "DATA WENI",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#080b13",
