@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#06070b">
-    <title>Data Weni</title>
+    <meta name="theme-color" content="#050914">
+    <title>Data Trading Romini</title>
     <link rel="manifest" href="./manifest.json">
     <script src="./Database.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -772,6 +772,384 @@
             #tabSwitcher { margin-left: 6px; margin-right: 6px; }
         }
     </style>
+    <style id="premium-theme">
+        /* ═══════════════════════════════════════════════════════════════
+           PREMIUM THEME  (Form, Statistik, Kalender, Rekap, Riwayat)
+           PNL Card (.hero-panel + .porto-card) SENGAJA tidak disentuh.
+           ═══════════════════════════════════════════════════════════════ */
+        :root {
+            --g-bg: #050914;
+            --g-flat: #0a1022;
+            --g-input: #060a18;
+            --g-line: rgba(150,172,255,.12);
+            --g-gold: #f0bd63;
+            --g-gold-2: #d9a441;
+            --g-ease: cubic-bezier(.22, 1, .36, 1);
+            --g-spring: cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        /* Latar: dark navy + cahaya halus */
+        html, body { background: var(--g-bg); }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(60% 45% at 88% 6%, rgba(79,110,255,.14), transparent 70%),
+                radial-gradient(55% 40% at 4% 58%, rgba(34,211,238,.06), transparent 70%),
+                radial-gradient(70% 50% at 50% 112%, rgba(217,164,65,.08), transparent 70%);
+        }
+        .bg-glow { background: radial-gradient(ellipse at center, rgba(120,140,255,.10) 0%, rgba(120,140,255,0) 70%); }
+
+        /* ───────── Glassmorphism card ───────── */
+        .glass-card {
+            position: relative;
+            background: linear-gradient(150deg, rgba(24,34,64,.60) 0%, rgba(10,16,34,.56) 100%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid var(--g-line);
+            box-shadow: 0 14px 40px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.07);
+            transition: border-color .4s var(--g-ease), box-shadow .4s var(--g-ease);
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            left: 18px; right: 18px; top: -1px;
+            height: 1px;
+            pointer-events: none;
+            background: linear-gradient(90deg, transparent, rgba(240,189,99,.65), transparent);
+            opacity: .5;
+            transition: opacity .4s ease;
+        }
+        @media (hover: hover) {
+            .glass-card:hover {
+                border-color: rgba(240,189,99,.22);
+                box-shadow: 0 18px 50px rgba(0,0,0,.5), 0 0 44px rgba(217,164,65,.06), inset 0 1px 0 rgba(255,255,255,.09);
+            }
+            .glass-card:hover::before { opacity: 1; }
+        }
+
+        .section-label { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; font-weight: 600; color: #eef1f7; }
+        .section-dot { width: 7px; height: 7px; background: var(--g-gold); box-shadow: 0 0 0 3px rgba(240,189,99,.14), 0 0 12px rgba(240,189,99,.85); }
+
+        /* ───────── Fade-in berurutan (di bawah PNL Card) ───────── */
+        @keyframes enterUp { from { opacity: 0; transform: translateY(34px); } to { opacity: 1; transform: none; } }
+        .enter-seq {
+            animation: enterUp .85s var(--g-ease) backwards;
+            animation-delay: calc(var(--n, 0) * 120ms + 180ms);
+        }
+
+        /* ───────── Form ───────── */
+        #tradeForm.glass-card { background: rgba(12,18,38,.78); }
+        #tradeForm .field-label {
+            background: linear-gradient(to bottom, var(--g-flat) 50%, var(--g-input) 50%);
+            color: #8d98b5;
+        }
+        #tradeForm .porto-input {
+            background: var(--g-input);
+            border: 1px solid rgba(150,172,255,.14);
+            transition: border-color .25s ease, box-shadow .3s ease;
+        }
+        #tradeForm .porto-input:hover { border-color: rgba(150,172,255,.28); }
+        #tradeForm .porto-input:focus {
+            border-color: var(--g-gold-2);
+            box-shadow: 0 0 0 3px rgba(217,164,65,.14), 0 0 26px rgba(217,164,65,.14);
+        }
+        #tradeForm .side-btn { transition: background .3s var(--g-ease), color .3s ease, box-shadow .3s ease, transform .2s var(--g-spring); }
+        #tradeForm .side-btn.on-long {
+            background: linear-gradient(135deg, rgba(52,211,153,.24), rgba(52,211,153,.08));
+            box-shadow: 0 0 18px rgba(52,211,153,.22), inset 0 0 0 1px rgba(52,211,153,.38);
+        }
+        #tradeForm .side-btn.on-short {
+            background: linear-gradient(135deg, rgba(251,113,133,.24), rgba(251,113,133,.08));
+            box-shadow: 0 0 18px rgba(251,113,133,.22), inset 0 0 0 1px rgba(251,113,133,.38);
+        }
+
+        /* Tombol Simpan position */
+        .btn-premium {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            width: 100%;
+            border: 0;
+            cursor: pointer;
+            border-radius: 14px;
+            padding: .8rem 1rem;
+            font-weight: 700;
+            letter-spacing: .01em;
+            color: #1a1305;
+            background: linear-gradient(135deg, #f6cb77 0%, #e0a83f 55%, #c98f2a 100%);
+            box-shadow: 0 8px 24px rgba(217,164,65,.28), inset 0 1px 0 rgba(255,255,255,.45);
+            transition: transform .35s var(--g-spring), box-shadow .35s var(--g-ease), filter .3s ease;
+        }
+        .btn-premium::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: -60%;
+            width: 45%;
+            z-index: -1;
+            background: linear-gradient(100deg, transparent, rgba(255,255,255,.6), transparent);
+            transform: skewX(-18deg);
+        }
+        @keyframes btnShine { from { left: -60%; } to { left: 130%; } }
+        @media (hover: hover) {
+            .btn-premium:hover {
+                transform: translateY(-2px) scale(1.03);
+                filter: saturate(1.12);
+                box-shadow: 0 14px 38px rgba(240,189,99,.46), 0 0 0 1px rgba(255,236,190,.35), inset 0 1px 0 rgba(255,255,255,.55);
+            }
+            .btn-premium:hover::before { animation: btnShine .9s var(--g-ease); }
+        }
+        .btn-premium:active { transform: scale(.97); }
+        .btn-premium:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+        @keyframes btnDone {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(.95); box-shadow: 0 0 0 0 rgba(52,211,153,.65), 0 8px 24px rgba(217,164,65,.28); }
+            65%  { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(52,211,153,0), 0 8px 24px rgba(217,164,65,.28); }
+            100% { transform: scale(1); }
+        }
+        .btn-premium.is-done { animation: btnDone .75s var(--g-ease); }
+        .btn-premium.is-done::before { animation: btnShine .8s var(--g-ease); }
+
+        /* ───────── Statistik ───────── */
+        .stat-card { cursor: pointer; -webkit-user-select: none; user-select: none; transition: transform .3s var(--g-spring), border-color .4s var(--g-ease), box-shadow .4s var(--g-ease); }
+        .stat-card:active { transform: scale(.985); }
+        .stats-unit {
+            margin-left: auto;
+            font-size: 10px;
+            font-weight: 700;
+            padding: .2rem .6rem;
+            border-radius: 999px;
+            color: var(--g-gold);
+            background: rgba(240,189,99,.1);
+            border: 1px solid rgba(240,189,99,.26);
+        }
+        .stat-cell {
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            padding: .65rem .3rem .75rem;
+            border-radius: 14px;
+            background: linear-gradient(160deg, rgba(255,255,255,.06), rgba(255,255,255,.012));
+            border: 1px solid rgba(150,172,255,.1);
+            transition: transform .3s var(--g-spring), border-color .3s ease, box-shadow .3s ease;
+        }
+        .stat-cell.is-p { --tone: #34d399; --tone-a: rgba(52,211,153,.4); }
+        .stat-cell.is-l { --tone: #fb7185; --tone-a: rgba(251,113,133,.4); }
+        .stat-cell::after {
+            content: '';
+            position: absolute;
+            left: 22%; right: 22%; bottom: 0;
+            height: 2px;
+            border-radius: 2px;
+            background: var(--tone);
+            box-shadow: 0 0 12px var(--tone);
+            opacity: .9;
+        }
+        .stat-cell .k { font-size: 10px; font-weight: 600; color: #7f8aa8; margin-bottom: .35rem; }
+        .stat-cell .v { font-family: 'Space Grotesk', sans-serif; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12.5px; white-space: nowrap; }
+        @media (hover: hover) {
+            .stat-cell:hover { transform: translateY(-2px) scale(1.04); border-color: var(--tone); box-shadow: 0 10px 26px -8px var(--tone-a), 0 0 18px -4px var(--tone-a); }
+        }
+
+        /* ───────── Kalender aktivitas ───────── */
+        .cal-nav {
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 9px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(150,172,255,.14);
+            color: #9aa6c6;
+            font-size: 14px; line-height: 1;
+            cursor: pointer;
+            transition: transform .3s var(--g-spring), box-shadow .3s ease, color .25s ease, border-color .25s ease;
+        }
+        @media (hover: hover) {
+            .cal-nav:hover { color: #fff; border-color: rgba(240,189,99,.45); box-shadow: 0 0 16px rgba(240,189,99,.28); transform: scale(1.14); }
+        }
+        .cal-nav:active { transform: scale(.88); }
+        #heatmapMonthLabel, #sheetHeatmapMonthLabel { color: #aab4d0; font-weight: 600; }
+
+        .heat-cell {
+            position: relative;
+            -webkit-user-select: none; user-select: none;
+            transition: transform .3s var(--g-spring), box-shadow .3s var(--g-ease), filter .3s ease;
+        }
+        .heat-cell.is-today { box-shadow: inset 0 0 0 1.5px rgba(240,189,99,.9); }
+        @media (hover: hover) {
+            .heat-cell:hover {
+                transform: scale(1.22);
+                z-index: 4;
+                filter: brightness(1.18);
+                box-shadow: 0 0 0 1px rgba(255,255,255,.3), 0 0 18px 3px var(--glow, rgba(240,189,99,.4));
+            }
+        }
+        .heat-cell:active { transform: scale(.9); }
+        @keyframes heatPop { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+        .heat-pop .heat-cell { animation: heatPop .55s var(--g-spring) backwards; animation-delay: calc(var(--i, 0) * 12ms); }
+        .glass-card .heatmap-tooltip {
+            background: rgba(10,16,34,.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-color: rgba(240,189,99,.32);
+            box-shadow: 0 10px 30px rgba(0,0,0,.55), 0 0 22px rgba(240,189,99,.14);
+        }
+
+        /* ───────── Tab pill ───────── */
+        #tabSwitcher {
+            background: rgba(255,255,255,.045);
+            border-color: rgba(150,172,255,.14);
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 24px rgba(0,0,0,.3);
+        }
+        #tabIndicator {
+            background: linear-gradient(135deg, #f6cb77, #d9a441);
+            box-shadow: 0 6px 22px rgba(217,164,65,.42), inset 0 1px 0 rgba(255,255,255,.4);
+        }
+        #tabSwitcher button { transition: color .3s ease, transform .25s var(--g-spring); }
+        #tabSwitcher button:active { transform: scale(.95); }
+
+        /* ───────── Rekap Harian: baris + accordion ───────── */
+        .day-item.rise-in, .trade-row.rise-in { animation-fill-mode: backwards; }
+        .day-row {
+            position: relative;
+            display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+            padding: .75rem .85rem .75rem 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(150,172,255,.09);
+            background: linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+            cursor: pointer;
+            outline: none;
+            transition: transform .3s var(--g-spring), border-color .3s ease, background .35s ease, box-shadow .35s ease;
+        }
+        .day-row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 22%; bottom: 22%;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+            background: var(--tone);
+            box-shadow: 0 0 12px var(--tone);
+        }
+        @media (hover: hover) {
+            .day-row:hover {
+                transform: translateY(-1px) scale(1.006);
+                border-color: rgba(240,189,99,.3);
+                background: linear-gradient(135deg, rgba(255,255,255,.075), rgba(255,255,255,.02));
+                box-shadow: 0 10px 30px -10px rgba(0,0,0,.6), 0 0 24px -6px rgba(240,189,99,.2);
+            }
+        }
+        .day-row:active { transform: scale(.992); }
+        .day-row.holding { transform: scale(.985); }
+        .day-row:focus-visible { border-color: var(--g-gold); box-shadow: 0 0 0 3px rgba(240,189,99,.2); }
+        .day-row.is-open {
+            border-color: rgba(240,189,99,.5);
+            background: linear-gradient(135deg, rgba(217,164,65,.17), rgba(217,164,65,.04));
+            box-shadow: 0 0 0 1px rgba(240,189,99,.12), 0 12px 34px -10px rgba(217,164,65,.3);
+        }
+        .day-row .chevron { transition: transform .45s var(--g-spring), color .3s ease; }
+        .day-row.is-open .chevron { transform: rotate(90deg); color: var(--g-gold); }
+
+        /* Accordion: tinggi dianimasikan lewat grid 0fr -> 1fr (tanpa ukur-ukur pakai JS) */
+        .day-panel {
+            display: grid;
+            grid-template-rows: 0fr;
+            opacity: 0;
+            visibility: hidden;
+            transition: grid-template-rows .5s var(--g-ease), opacity .3s ease, visibility 0s linear .5s;
+        }
+        .day-panel.open {
+            grid-template-rows: 1fr;
+            opacity: 1;
+            visibility: visible;
+            transition: grid-template-rows .5s var(--g-ease), opacity .4s ease .05s, visibility 0s;
+        }
+        .day-panel-clip { overflow: hidden; min-height: 0; }
+        .day-panel-pad { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 4px 8px; }
+
+        /* ───────── Baris trade ───────── */
+        .trade-row {
+            position: relative;
+            border: 1px solid var(--tr-b);
+            background: linear-gradient(135deg, var(--tr-a), rgba(255,255,255,.012));
+            transition: transform .3s var(--g-spring), border-color .3s ease, box-shadow .3s ease, background .3s ease;
+        }
+        .trade-row.is-profit { --tr-a: rgba(52,211,153,.09); --tr-b: rgba(52,211,153,.2); --tr-g: rgba(52,211,153,.3); }
+        .trade-row.is-loss   { --tr-a: rgba(251,113,133,.09); --tr-b: rgba(251,113,133,.2); --tr-g: rgba(251,113,133,.3); }
+        @media (hover: hover) {
+            .trade-row:hover {
+                border-color: var(--tr-g);
+                background: linear-gradient(135deg, var(--tr-a), var(--tr-a));
+                box-shadow: 0 12px 30px -10px var(--tr-g), 0 0 0 1px var(--tr-b);
+            }
+        }
+
+        /* ───────── Toast dari bawah ───────── */
+        #toastHost {
+            position: fixed;
+            left: 0; right: 0;
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+            z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            pointer-events: none;
+        }
+        @media (max-width: 767px) { #toastHost { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); } }
+        .toast-pill {
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            display: flex; align-items: center; gap: 12px;
+            max-width: min(92vw, 380px);
+            padding: .65rem 1.2rem .7rem .7rem;
+            border-radius: 18px;
+            color: #eef1f7;
+            font-size: 14px; font-weight: 600;
+            background: rgba(12,18,36,.84);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,.1);
+            box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 0 0 1px var(--t-a), 0 0 36px -6px var(--t-a);
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(48px) scale(.9);
+            transition: transform .6s var(--g-spring), opacity .3s ease;
+        }
+        .toast-pill.is-ok  { --t: #34d399; --t-a: rgba(52,211,153,.38);  --t-bg: rgba(52,211,153,.14); }
+        .toast-pill.is-err { --t: #fb7185; --t-a: rgba(251,113,133,.38); --t-bg: rgba(251,113,133,.14); }
+        .toast-pill.show { opacity: 1; transform: none; }
+        .toast-pill.hide { opacity: 0; transform: translateY(28px) scale(.94); transition: transform .35s ease-in, opacity .3s ease; }
+        .toast-ic { position: relative; flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--t); background: var(--t-bg); }
+        .toast-ic svg { width: 32px; height: 32px; overflow: visible; }
+        .toast-ic::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--t); opacity: 0; }
+        .tc-ring, .tc-mark { stroke-dasharray: 1; stroke-dashoffset: 1; }
+        @keyframes tDraw { to { stroke-dashoffset: 0; } }
+        @keyframes tPing { 0% { transform: scale(.85); opacity: .75; } 100% { transform: scale(2); opacity: 0; } }
+        @keyframes tShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+        .toast-pill.show .tc-ring { animation: tDraw .55s .12s ease forwards; }
+        .toast-pill.show .tc-mark { animation: tDraw .4s .5s ease forwards; }
+        .toast-pill.show .toast-ic::after { animation: tPing .9s .45s ease-out; }
+        .toast-pill.is-err.show .toast-ic { animation: tShake .4s .55s ease; }
+        .toast-bar { position: absolute; left: 0; bottom: 0; width: 100%; height: 2px; background: var(--t); opacity: .85; transform-origin: left; }
+        @keyframes tBar { to { transform: scaleX(0); } }
+        .toast-pill.show .toast-bar { animation: tBar var(--dur, 2600ms) linear forwards; }
+
+        /* ───────── HP: dock & laci ikut tema navy ───────── */
+        @media (max-width: 767px) {
+            .stats-handle { background: linear-gradient(180deg, rgba(18,26,50,.94), rgba(6,10,22,.98)); }
+            .stats-sheet  { background: linear-gradient(180deg, rgba(16,24,48,.97), rgba(6,10,22,.99)); }
+        }
+
+        /* ───────── Hormati "kurangi animasi" ───────── */
+        @media (prefers-reduced-motion: reduce) {
+            .enter-seq, .heat-pop .heat-cell, .btn-premium.is-done, .btn-premium:hover::before,
+            .toast-pill .tc-ring, .toast-pill .tc-mark, .toast-pill .toast-ic, .toast-pill .toast-ic::after, .toast-pill .toast-bar { animation: none !important; }
+            .tc-ring, .tc-mark { stroke-dashoffset: 0; }
+            .toast-pill, .day-panel, .day-row, .stat-cell, .heat-cell, .btn-premium { transition-duration: .01ms !important; }
+        }
+    </style>
 </head>
 <body class="relative">
     <div class="bg-glow"></div>
@@ -819,7 +1197,7 @@
                 </div>
             </div>
 
-            <form id="tradeForm" onsubmit="handleSubmit(event)" class="porto-card p-3.5 rounded-2xl space-y-3.5 lg:shrink-0">
+            <form id="tradeForm" onsubmit="handleSubmit(event)" class="glass-card form-card enter-seq p-3.5 rounded-2xl space-y-3.5 lg:shrink-0" style="--n:1">
                 <div class="grid grid-cols-2 gap-2.5">
                 <div class="field">
                     <span class="field-label">Pairs</span>
@@ -891,34 +1269,33 @@
                     <span id="pnlPreview" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] text-[var(--text-faint)] pointer-events-none text-right">≈ Rp 0</span>
                 </div>
 
-                <button type="submit" id="submitBtn" class="w-full bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-[#1a1305] font-semibold py-2.5 rounded-xl transition shadow-lg shadow-amber-500/20">
-                    Simpan position
-                </button>
+                <button type="submit" id="submitBtn" class="btn-premium">Simpan position</button>
             </form>
 
             <!-- WIDGET TAMBAHAN (khusus desktop) -->
             <div class="hidden lg:flex lg:flex-col lg:flex-1 lg:min-h-0 space-y-2.5">
 
                 <!-- Statistik Cepat -->
-                <div class="porto-card p-3.5 rounded-2xl shrink-0 cursor-pointer active:opacity-70 transition" onclick="toggleQuickStatsView()">
+                <div class="glass-card stat-card enter-seq p-3.5 rounded-2xl shrink-0" style="--n:2" onclick="toggleQuickStatsView()">
                     <div class="flex items-center gap-2 mb-2.5">
                         <span class="section-dot"></span>
                         <h2 class="section-label">Statistik</h2>
+                    <span class="stats-unit">USDT</span>
                     </div>
                     <div id="quickStatsGrid" class="grid grid-cols-3 gap-2"></div>
                 </div>
 
                 <!-- Kalender Aktivitas (Heatmap) -->
-                <div class="porto-card p-3.5 rounded-2xl lg:flex lg:flex-col lg:flex-1 lg:min-h-0 relative">
+                <div class="glass-card enter-seq p-3.5 rounded-2xl lg:flex lg:flex-col lg:flex-1 lg:min-h-0 relative" style="--n:3">
                     <div class="flex items-center justify-between mb-2.5 shrink-0">
                         <div class="flex items-center gap-2">
                             <span class="section-dot"></span>
                             <h2 class="section-label">Kalender aktivitas</h2>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <button type="button" onclick="changeHeatmapMonth(-1)" class="w-5 h-5 flex items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-white hover:border-slate-500 transition text-[10px]">‹</button>
+                            <button type="button" onclick="changeHeatmapMonth(-1)" class="cal-nav">‹</button>
                             <span id="heatmapMonthLabel" class="text-[10px] text-[var(--text-faint)] w-28 text-center whitespace-nowrap shrink-0"></span>
-                            <button type="button" onclick="changeHeatmapMonth(1)" class="w-5 h-5 flex items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-white hover:border-slate-500 transition text-[10px]">›</button>
+                            <button type="button" onclick="changeHeatmapMonth(1)" class="cal-nav">›</button>
                         </div>
                     </div>
                     <div id="heatmapCalendar" class="lg:flex-1 lg:flex lg:flex-col lg:min-h-0"></div>
@@ -932,7 +1309,7 @@
         <div class="space-y-1">
 
             <!-- Tab pill: dipakai di mobile & desktop -->
-            <div>
+            <div class="enter-seq" style="--n:2">
                 <div id="tabSwitcher" class="relative flex items-center gap-1 p-1 rounded-full bg-[var(--surface-2)] border border-[var(--border)] mb-1">
                     <div id="tabIndicator" class="absolute rounded-full bg-amber-500 shadow-lg shadow-amber-500/25" style="top:4px; bottom:4px; left:4px; width:0;"></div>
                     <button type="button" id="tabBtnRekap" onclick="switchTab('rekap')" class="relative z-10 flex-1 text-center text-xs font-semibold py-2 rounded-full transition-colors text-[#1a1305]">Rekap Harian</button>
@@ -940,9 +1317,9 @@
                 </div>
             </div>
 
-            <div id="tabPager">
+            <div id="tabPager" class="enter-seq" style="--n:3">
             <div id="rekapCardWrap">
-                <div id="rekapCard" class="porto-card p-3 rounded-2xl space-y-1 lg:flex lg:flex-col lg:h-[880px]">
+                <div id="rekapCard" class="glass-card p-3 rounded-2xl space-y-1 lg:flex lg:flex-col lg:h-[880px]">
 
                     <div class="hidden lg:flex justify-between items-center">
                         <div class="flex items-center gap-2">
@@ -956,7 +1333,7 @@
             </div>
 
             <div id="riwayatCardWrap" class="hidden">
-                <div id="riwayatCard" class="porto-card p-3 rounded-2xl space-y-1 lg:flex lg:flex-col lg:h-[880px]">
+                <div id="riwayatCard" class="glass-card p-3 rounded-2xl space-y-1 lg:flex lg:flex-col lg:h-[880px]">
                     <div class="hidden lg:flex justify-between items-center">
                         <div class="flex items-center gap-2">
                             <span class="section-dot"></span>
@@ -984,24 +1361,25 @@
     <div id="statsSheet" class="stats-sheet" aria-hidden="true">
         <div id="statsSheetGrab" class="stats-grab"><svg width="44" height="16" viewBox="0 0 44 16" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline id="statsGrabPoly" points="6,8 22,8 38,8"/></svg></div>
         <div class="stats-sheet-body custom-scroll">
-            <div class="porto-card p-3.5 rounded-2xl shrink-0 cursor-pointer active:opacity-70 transition" onclick="toggleQuickStatsView()">
+            <div class="glass-card stat-card p-3.5 rounded-2xl shrink-0" onclick="toggleQuickStatsView()">
                 <div class="flex items-center gap-2 mb-2.5">
                     <span class="section-dot"></span>
                     <h2 class="section-label">Statistik</h2>
+                    <span class="stats-unit">USDT</span>
                 </div>
                 <div id="sheetStatsGrid" class="grid grid-cols-3 gap-2"></div>
             </div>
 
-            <div class="porto-card p-3.5 rounded-2xl relative shrink-0">
+            <div class="glass-card p-3.5 rounded-2xl relative shrink-0">
                 <div class="flex items-center justify-between mb-2.5">
                     <div class="flex items-center gap-2">
                         <span class="section-dot"></span>
                         <h2 class="section-label">Kalender aktivitas</h2>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <button type="button" onclick="changeHeatmapMonth(-1)" class="w-5 h-5 flex items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-white hover:border-slate-500 transition text-[10px]">‹</button>
+                        <button type="button" onclick="changeHeatmapMonth(-1)" class="cal-nav">‹</button>
                         <span id="sheetHeatmapMonthLabel" class="text-[10px] text-[var(--text-faint)] w-28 text-center whitespace-nowrap shrink-0"></span>
-                        <button type="button" onclick="changeHeatmapMonth(1)" class="w-5 h-5 flex items-center justify-center rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-dim)] hover:text-white hover:border-slate-500 transition text-[10px]">›</button>
+                        <button type="button" onclick="changeHeatmapMonth(1)" class="cal-nav">›</button>
                     </div>
                 </div>
                 <div id="sheetHeatmapCalendar"></div>
@@ -1433,29 +1811,54 @@
             el.style.color = val === 0 ? 'var(--text-faint)' : (isProfit ? 'var(--profit)' : 'var(--loss)');
         }
 
-        // Toast premium: gelap elegan + garis warna di kiri (hijau = sukses, merah = error)
+        // Toast premium: melayang dari bawah (spring), ikon centang/silang "digambar",
+        // garis waktu di dasar. Pakai DOM sendiri (bukan SweetAlert) supaya bisa naik dari bawah.
+        const TOAST_ICONS = {
+            ok:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="tc-ring" cx="12" cy="12" r="9.5" pathLength="1"/><path class="tc-mark" d="M7.8 12.4l2.9 2.9 5.6-6" pathLength="1"/></svg>',
+            err: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="tc-ring" cx="12" cy="12" r="9.5" pathLength="1"/><path class="tc-mark" d="M9 9l6 6M15 9l-6 6" pathLength="1"/></svg>'
+        };
+
         function showToast(message, type = 'success') {
             const ok = type === 'success';
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top',
-                showConfirmButton: false,
-                timer: 2600,
-                timerProgressBar: true,
-                customClass: { popup: 'premium-toast ' + (ok ? 'is-ok' : 'is-err') },
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            });
+            let host = document.getElementById('toastHost');
+            if (!host) {
+                host = document.createElement('div');
+                host.id = 'toastHost';
+                host.setAttribute('aria-live', 'polite');
+                document.body.appendChild(host);
+            }
+            while (host.children.length >= 3) host.firstElementChild.remove();
 
-            Toast.fire({
-                icon: ok ? 'success' : 'error',
-                title: message,
-                background: 'rgba(18,21,30,0.92)',
-                color: '#eef1f7',
-                iconColor: ok ? '#34d399' : '#fb7185'
-            });
+            const DUR = 2600;
+            const el = document.createElement('div');
+            el.className = 'toast-pill ' + (ok ? 'is-ok' : 'is-err');
+            el.setAttribute('role', ok ? 'status' : 'alert');
+            el.style.setProperty('--dur', DUR + 'ms');
+            el.innerHTML = `<span class="toast-ic">${ok ? TOAST_ICONS.ok : TOAST_ICONS.err}</span><span class="toast-msg"></span><span class="toast-bar"></span>`;
+            el.querySelector('.toast-msg').textContent = message;
+            host.appendChild(el);
+
+            let timer = null;
+            const dismiss = () => {
+                clearTimeout(timer);
+                if (!el.isConnected || el.classList.contains('hide')) return;
+                el.classList.remove('show');
+                el.classList.add('hide');
+                setTimeout(() => el.remove(), 380);
+            };
+            el.addEventListener('click', dismiss);
+            requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+            timer = setTimeout(dismiss, DUR);
+        }
+
+        // Tombol Simpan "berdenyut" hijau sekali pas berhasil
+        function flashSubmitBtn() {
+            const b = document.getElementById('submitBtn');
+            if (!b) return;
+            b.classList.remove('is-done');
+            void b.offsetWidth;
+            b.classList.add('is-done');
+            setTimeout(() => b.classList.remove('is-done'), 800);
         }
 
         function moveTabIndicator(activeBtn, instant) {
@@ -1746,6 +2149,7 @@
             renderDashboard(cachedGlobalResponse);
 
             showToast("Tersimpan", "success");
+            flashSubmitBtn();
 
             document.getElementById('pair').value = '';
             document.getElementById('pnl').value = '';
@@ -1923,7 +2327,6 @@
             const pnlNum = parseFloat(item.pnl) || 0;
             const isProfit = pnlNum >= 0;
             const pnlColor = isProfit ? 'text-emerald-400' : 'text-rose-400';
-            const bgCard = isProfit ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5';
             const totalIdr = formatRupiah(pnlNum * currentKursIdr);
 
             // Badge posisi di samping nama koin: S merah = Short, L hijau = Long
@@ -1933,7 +2336,7 @@
 
             const shouldAnimate = forceAnimate || animateRows;
             const div = document.createElement('div');
-            div.className = `row-card entrance-item ${shouldAnimate ? 'rise-in' : ''} p-2.5 sm:p-3 rounded-xl border ${bgCard} flex items-center justify-between hover:border-slate-700 transition gap-1.5 cursor-pointer select-none`;
+            div.className = `row-card trade-row ${isProfit ? 'is-profit' : 'is-loss'} entrance-item ${shouldAnimate ? 'rise-in' : ''} p-2.5 sm:p-3 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer select-none`;
             if (i !== undefined) div.style.animationDelay = `${i * 15}ms`;
             div.innerHTML = `
                 <div class="w-[38%] min-w-0 text-left">
@@ -1994,58 +2397,52 @@
             return 'dayPanel-' + String(date).replace(/[^A-Za-z0-9]/g, '');
         }
 
-        // Toggle expand/collapse rekap harian. Kalau lagi nutup (klik ulang tanggal
-        // yang sudah expand), animasikan dulu panelnya mengecil & memudar sebelum
-        // benar-benar dihapus dari DOM lewat render ulang -> collapse jadi smooth,
-        // bukan langsung "ilang" instan kayak sebelumnya.
-        function toggleExpand(date) {
-            if (expandedDate === date) {
-                const panel = document.getElementById(getDayPanelId(date));
-                if (panel) {
-                    const startHeight = panel.scrollHeight;
-                    panel.classList.remove('expand-in');
-                    panel.style.maxHeight = startHeight + 'px';
-                    panel.style.opacity = '1';
-                    panel.style.transform = 'translateY(0)';
-                    panel.classList.add('collapsing');
-                    void panel.offsetHeight; // force reflow biar transisi ke-trigger
-                    requestAnimationFrame(() => {
-                        panel.style.maxHeight = '0px';
-                        panel.style.opacity = '0';
-                        panel.style.transform = 'translateY(-4px)';
-                    });
+        // Accordion Rekap Harian: panel dibuka/ditutup di tempat (tinggi dianimasikan CSS
+        // lewat grid 0fr <-> 1fr), tanpa render ulang daftar -> slide down/up mulus,
+        // chevron berputar pegas, dan baris lain tidak ikut "berkedip".
+        function fillDayPanel(date, pad) {
+            pad.innerHTML = '';
+            const dayTrades = (cachedGlobalResponse.history || []).filter(item => item.closed === date);
+            dayTrades.forEach((item, idx) => {
+                pad.appendChild(createTradeCardElement(item, idx, true));
+            });
+        }
 
-                    // Update tampilan baris & chevron duluan biar responsif,
-                    // ga nunggu render ulang yang baru jalan setelah animasi kelar.
-                    const row = panel.previousElementSibling;
-                    if (row) {
-                        const chevron = row.querySelector('.chevron');
-                        if (chevron) chevron.classList.remove('open');
-                        row.classList.remove('bg-amber-500/10', 'border-amber-500', 'ring-1', 'ring-amber-500');
-                        row.classList.add('bg-[var(--bg)]', 'border-[var(--border)]', 'hover:border-slate-600');
-                    }
+        function setDayOpen(date, open) {
+            const panel = document.getElementById(getDayPanelId(date));
+            if (!panel) return;
+            const item = panel.parentElement;
+            const row = item && item.querySelector('.day-row');
+            const pad = panel.querySelector('.day-panel-pad');
+            if (!row || !pad) return;
 
-                    let finished = false;
-                    const finish = () => {
-                        if (finished) return;
-                        finished = true;
-                        expandedDate = null;
-                        renderDailySummary(cachedGlobalResponse.history || [], false);
-                    };
-                    panel.addEventListener('transitionend', function handler(e) {
-                        if (e.propertyName !== 'max-height') return;
-                        panel.removeEventListener('transitionend', handler);
-                        finish();
-                    });
-                    // Jaga-jaga kalau transitionend ga kepanggil (misal panel dilepas duluan)
-                    setTimeout(finish, 300);
-                    return;
-                }
-                expandedDate = null;
+            clearTimeout(panel._clearT);
+            if (open) {
+                if (!pad.childElementCount) fillDayPanel(date, pad);
+                panel.classList.add('open');
             } else {
-                expandedDate = date;
+                panel.classList.remove('open');
+                // kosongkan isi setelah animasi tutup selesai, supaya buka berikutnya animasi masuk lagi
+                panel._clearT = setTimeout(() => {
+                    if (!panel.classList.contains('open')) pad.innerHTML = '';
+                }, 560);
             }
-            renderDailySummary(cachedGlobalResponse.history || [], false);
+            row.classList.toggle('is-open', open);
+            row.setAttribute('aria-expanded', String(open));
+            const chevron = row.querySelector('.chevron');
+            if (chevron) chevron.classList.toggle('open', open);
+        }
+
+        function toggleExpand(date) {
+            const prev = expandedDate;
+            if (prev === date) {
+                expandedDate = null;
+                setDayOpen(date, false);
+                return;
+            }
+            if (prev) setDayOpen(prev, false);
+            expandedDate = date;
+            setDayOpen(date, true);
         }
 
         function renderDailySummary(data, animateDays) {
@@ -2079,17 +2476,23 @@
                 var fullDateLabel = dayName ? `${dayName}, ${date}` : date;
                 var totalIdr = formatRupiah(summary.total * currentKursIdr);
 
+                // pembungkus: baris + panel accordion
+                const item = document.createElement('div');
+                item.className = `day-item entrance-item ${animateDays ? 'rise-in' : ''}`;
+                item.style.animationDelay = `${i * 25}ms`;
+
                 const row = document.createElement('div');
-                row.className = `entrance-item ${animateDays ? 'rise-in' : ''} p-2.5 sm:p-3 rounded-xl border cursor-pointer flex justify-between items-center border-l-2 ${
-                    isExpanded
-                    ? 'bg-amber-500/10 border-amber-500 ring-1 ring-amber-500'
-                    : 'bg-[var(--bg)] border-[var(--border)] hover:border-slate-600'
-                }`;
-                row.style.borderLeftColor = isProf ? 'var(--profit)' : 'var(--loss)';
-                row.style.animationDelay = `${i * 25}ms`;
+                row.className = `day-row ${isExpanded ? 'is-open' : ''}`;
+                row.style.setProperty('--tone', isProf ? 'var(--profit)' : 'var(--loss)');
+                row.setAttribute('role', 'button');
+                row.setAttribute('aria-expanded', String(isExpanded));
+                row.tabIndex = 0;
                 row.onclick = () => {
                     if (row._holdFired) { row._holdFired = false; return; } // habis klik-tahan, jangan ikut buka/tutup
                     toggleExpand(date);
+                };
+                row.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(date); }
                 };
                 bindDayHold(row, date);
                 row.innerHTML = `
@@ -2109,18 +2512,17 @@
                         </div>
                     </div>
                 `;
-                dailyContainer.appendChild(row);
 
-                if (isExpanded) {
-                    const panel = document.createElement('div');
-                    panel.id = getDayPanelId(date);
-                    panel.className = 'expand-in space-y-2 pl-1 pt-1';
-                    const dayTrades = data.filter(item => item.closed === date);
-                    dayTrades.forEach((item, idx) => {
-                        panel.appendChild(createTradeCardElement(item, idx, true));
-                    });
-                    dailyContainer.appendChild(panel);
-                }
+                const panel = document.createElement('div');
+                panel.id = getDayPanelId(date);
+                panel.className = 'day-panel' + (isExpanded ? ' open' : '');
+                panel.innerHTML = '<div class="day-panel-clip"><div class="day-panel-pad"></div></div>';
+
+                item.appendChild(row);
+                item.appendChild(panel);
+                dailyContainer.appendChild(item);
+
+                if (isExpanded) fillDayPanel(date, panel.querySelector('.day-panel-pad'));
             });
         }
 
@@ -3365,26 +3767,74 @@
             renderQuickStatsGrid();
         }
 
+        // ─────────── Animasi angka (CountUp) ───────────
+        const PREMIUM_REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        function animateCount(el, from, to, fmt, ms) {
+            cancelAnimationFrame(el._cuRaf);
+            el.textContent = fmt(from);
+            if (PREMIUM_REDUCED || from === to) { el.textContent = fmt(to); return; }
+            const dur = ms || 1300, t0 = performance.now();
+            const step = (t) => {
+                const k = Math.min(1, (t - t0) / dur);
+                const eased = 1 - Math.pow(1 - k, 4);      // easeOutQuart: cepat di awal, melambat mendarat
+                el.textContent = fmt(from + (to - from) * eased);
+                if (k < 1) el._cuRaf = requestAnimationFrame(step);
+                else el.textContent = fmt(to);
+            };
+            el._cuRaf = requestAnimationFrame(step);
+        }
+
+        // Nilai yang SEDANG tampil di kotak Statistik. Render pertama hitung dari 0;
+        // render berikutnya (data baru dari Sheet / trade baru) hitung dari nilai tampil terakhir,
+        // jadi angka cuma bergerak kalau memang berubah.
+        let shownQuickStats = null, shownQuickMode = null, shownQuickKurs = null;
+        let heatPop = true;   // true = sel kalender muncul "pop" berurutan (load awal & ganti bulan)
+
         // Gambar ulang kotak Statistik dari nilai yang udah dihitung (lastQuickStats),
         // dipanggil pas data berubah maupun pas kotaknya diklik buat toggle USDT/IDR.
         function renderQuickStatsGrid() {
             const grid = document.getElementById('quickStatsGrid');
             if (!grid) return;
 
-            const cell = (label, val) => {
-                const isProfit = val >= 0;
-                const text = isQuickStatsIdrView
-                    ? `${isProfit ? '' : '-'}${formatRupiah(Math.abs(val) * currentKursIdr)}`
-                    : `${isProfit ? '+' : ''}${val.toFixed(2)}`;
+            const idr = isQuickStatsIdrView;
+            const keys = ['daily', 'weekly', 'monthly'];
+            const labels = { daily: 'Avg Harian', weekly: 'Avg Mingguan', monthly: 'Avg Bulanan' };
+            const fmt = idr
+                ? (v) => `${v >= 0 ? '' : '-'}${formatRupiah(Math.abs(v) * currentKursIdr)}`
+                : (v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
+
+            const sameMode = !!shownQuickStats && shownQuickMode === idr;
+
+            // Tidak ada yang berubah & kotak sudah tampil -> jangan dirender ulang
+            // (supaya hitung-naik yang lagi jalan nggak terpotong pas data Sheet datang).
+            if (sameMode && grid.querySelector('.stat-cell')
+                && keys.every(k => shownQuickStats[k] === lastQuickStats[k])
+                && (!idr || shownQuickKurs === currentKursIdr)) {
+                return;
+            }
+
+            setStatsHTML(keys.map(k => {
+                const val = lastQuickStats[k];
+                const from = sameMode ? shownQuickStats[k] : 0;
+                const pos = val >= 0;
                 return `
-                    <div class="text-center p-2 rounded-xl bg-[var(--bg)] border border-[var(--border)]">
-                        <div class="text-[9px] text-[var(--text-faint)] mb-1">${label}</div>
-                        <div class="num text-xs font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}">${text}</div>
+                    <div class="stat-cell ${pos ? 'is-p' : 'is-l'}">
+                        <div class="k">${labels[k]}</div>
+                        <div class="v stat-count ${pos ? 'text-emerald-400' : 'text-rose-400'}" data-key="${k}">${fmt(from)}</div>
                     </div>
                 `;
-            };
+            }).join(''));
 
-            setStatsHTML(cell('Avg Harian', lastQuickStats.daily) + cell('Avg Mingguan', lastQuickStats.weekly) + cell('Avg Bulanan', lastQuickStats.monthly));
+            document.querySelectorAll('.stats-unit').forEach(el => { el.textContent = idr ? 'IDR' : 'USDT'; });
+
+            document.querySelectorAll('#quickStatsGrid .stat-count, #sheetStatsGrid .stat-count').forEach(el => {
+                const k = el.dataset.key;
+                animateCount(el, sameMode ? shownQuickStats[k] : 0, lastQuickStats[k], fmt);
+            });
+
+            shownQuickStats = { daily: lastQuickStats.daily, weekly: lastQuickStats.weekly, monthly: lastQuickStats.monthly };
+            shownQuickMode = idr;
+            shownQuickKurs = currentKursIdr;
         }
 
         function toggleQuickStatsView() {
@@ -3393,6 +3843,7 @@
         }
 
         function changeHeatmapMonth(delta, animate) {
+            heatPop = true;
             heatmapMonth += delta;
             if (heatmapMonth > 11) { heatmapMonth = 0; heatmapYear++; }
             if (heatmapMonth < 0) { heatmapMonth = 11; heatmapYear--; }
@@ -3469,8 +3920,17 @@
             const vals = Object.values(dailyMap).map(v => Math.abs(v));
             const maxAbs = vals.length > 0 ? Math.max(...vals, 1) : 1;
 
+            // Data & bulan sama dengan render sebelumnya -> biarkan, supaya animasi pop
+            // yang lagi jalan nggak terpotong waktu data Sheet datang menyusul cache.
+            const sig = `${year}-${month}|${new Date().toDateString()}|${JSON.stringify(dailyMap)}`;
+            if (container.dataset.sig === sig && container.firstElementChild) return;
+            container.dataset.sig = sig;
+
+            const pop = heatPop;
+            heatPop = false;
+            const todayD = new Date();
             const weekdayLabels = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
-            let cellsHtml = weekdayLabels.map(w => `<div class="text-[8px] text-[var(--text-faint)] text-center">${w}</div>`).join('');
+            let cellsHtml = weekdayLabels.map(w => `<div class="text-[9px] font-semibold text-center" style="color:#6b7694">${w}</div>`).join('');
 
             for (let i = 0; i < firstDay; i++) {
                 cellsHtml += `<div></div>`;
@@ -3478,18 +3938,21 @@
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const val = dailyMap[day];
-                let bg = 'var(--surface-2)';
-                let textColor = 'var(--text-faint)';
+                let bg = 'rgba(255,255,255,0.05)';
+                let textColor = '#6b7694';
+                let glow = 'rgba(240,189,99,0.45)';
                 if (val !== undefined) {
                     const intensity = Math.min(1, Math.abs(val) / maxAbs);
                     bg = val >= 0 ? `rgba(52,211,153,${0.2 + intensity * 0.6})` : `rgba(251,113,133,${0.2 + intensity * 0.6})`;
+                    glow = val >= 0 ? 'rgba(52,211,153,0.85)' : 'rgba(251,113,133,0.85)';
                     textColor = '#fff';
                 }
                 const valAttr = val !== undefined ? val : 'null';
-                cellsHtml += `<div class="aspect-square lg:aspect-auto rounded-md flex items-center justify-center text-[9px] font-medium cursor-pointer" style="background:${bg}; color:${textColor}" onclick="showHeatmapDayDetail(event, ${day}, ${valAttr})">${day}</div>`;
+                const isToday = todayD.getFullYear() === year && todayD.getMonth() === month && todayD.getDate() === day;
+                cellsHtml += `<div class="heat-cell${isToday ? ' is-today' : ''} aspect-square lg:aspect-auto rounded-md flex items-center justify-center text-[9px] font-medium cursor-pointer" style="background:${bg}; color:${textColor}; --glow:${glow}; --i:${firstDay + day}" onclick="showHeatmapDayDetail(event, ${day}, ${valAttr})">${day}</div>`;
             }
 
-            const calendarHtml = `<div class="grid grid-cols-7 gap-1 lg:h-full lg:grid-rows-[auto_repeat(6,1fr)]">${cellsHtml}</div>`;
+            const calendarHtml = `<div class="grid grid-cols-7 gap-1 ${pop ? 'heat-pop' : ''} lg:h-full lg:grid-rows-[auto_repeat(6,1fr)]">${cellsHtml}</div>`;
             ['heatmapCalendar', 'sheetHeatmapCalendar'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = calendarHtml;
@@ -3497,7 +3960,7 @@
         }
 
         function showHeatmapDayDetail(e, day, val) {
-            const card = e.currentTarget.closest('.porto-card');
+            const card = e.currentTarget.closest('.porto-card, .glass-card');
             const tooltip = card ? card.querySelector('.heatmap-tooltip') : null;
             if (!tooltip || !card) return;
 
