@@ -906,6 +906,46 @@
         #lockScreen .lock-avatar { --av: 72px; margin: 16px auto 0; box-shadow: 0 8px 28px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.18); }
         #lockScreen .lock-chip .avatar { --av: 20px; }
 
+
+        /* ───────── Mode akun: layar masuk, dialog, crop foto ───────── */
+        #lockScreen .auth-tabs { display: flex; gap: 4px; padding: 4px; margin: 14px 0 16px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+        #lockScreen .auth-tab { flex: 1; padding: 8px 0; border-radius: 9px; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--text-dim); background: transparent; border: 0; cursor: pointer; }
+        #lockScreen .auth-tab.is-on { background: var(--accent-bright); color: #1a1305; }
+        #lockScreen .auth-field { display: block; text-align: left; margin-bottom: 10px; }
+        #lockScreen .auth-field > span { display: block; margin: 0 2px 4px; font-size: 11px; font-weight: 600; color: var(--text-faint); }
+        #lockScreen input.auth-input { text-align: left; letter-spacing: normal; font-size: 15px; padding: 12px 14px; }
+        #lockScreen .auth-note { margin: 2px 0 10px; font-size: 12px; line-height: 1.45; color: var(--accent-bright); }
+        #lockScreen .auth-hint { margin-top: 12px; font-size: 11px; line-height: 1.45; color: var(--text-faint); }
+        #lockScreen .lock-btn[disabled] { opacity: .55; cursor: default; }
+        .dlg-backdrop { position: fixed; inset: 0; z-index: 10001; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(4,5,8,.72); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); overflow-y: auto; }
+        .dlg { width: 100%; max-width: 350px; padding: 18px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: pmIn .18s var(--g-ease, ease-out); }
+        .dlg-title { font-size: 16px; font-weight: 800; color: var(--text); }
+        .dlg-title.is-danger { color: #fb7185; }
+        .dlg-desc { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--text-dim); }
+        .dlg-field { display: block; margin-top: 12px; }
+        .dlg-field > span { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 600; color: var(--text-faint); }
+        .dlg input[type="text"], .dlg input[type="password"] { width: 100%; padding: 11px 12px; border-radius: 11px; font-size: 15px; font-family: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); outline: none; }
+        .dlg input:focus { border-color: var(--accent-bright); }
+        .dlg-err { min-height: 16px; margin-top: 10px; font-size: 12px; color: #fb7185; }
+        .dlg-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .dlg-actions button, .dlg-link { font-family: inherit; cursor: pointer; border: 0; -webkit-tap-highlight-color: transparent; }
+        .dlg-actions button { flex: 1; padding: 11px; border-radius: 11px; font-size: 13px; font-weight: 700; }
+        .dlg-cancel { background: var(--bg); color: var(--text-dim); border: 1px solid var(--border) !important; }
+        .dlg-ok { background: var(--accent-bright); color: #1a1305; }
+        .dlg-ok.is-danger { background: #e11d48; color: #fff; }
+        .dlg-actions button[disabled] { opacity: .45; cursor: default; }
+        .dlg-link { display: inline-block; margin-top: 10px; padding: 8px 12px; border-radius: 9px; font-size: 12px; font-weight: 700; color: var(--accent-bright); background: var(--bg); border: 1px solid var(--border); }
+        .profile-menu .pm-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px 10px; }
+        .profile-menu .pm-head .avatar { --av: 38px; }
+        .profile-menu .pm-head b { display: block; font-size: 13px; color: var(--text); }
+        .profile-menu .pm-head small { display: block; margin-top: 1px; font-size: 11px; color: var(--text-faint); }
+        .profile-menu button.pm-danger { color: #fb7185; }
+        .crop-stage { position: relative; margin: 14px auto 0; overflow: hidden; border-radius: 14px; background: #000; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+        .crop-stage canvas { display: block; width: 100%; height: 100%; }
+        .crop-ring { position: absolute; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0,0,0,.58); border: 2px solid rgba(255,255,255,.92); pointer-events: none; }
+        .crop-zoom { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--text-faint); font-size: 16px; font-weight: 700; }
+        .crop-zoom input[type="range"] { flex: 1; accent-color: var(--accent-bright); }
+
         /* ───────── Layar sandi profil ───────── */
         #lockScreen {
             position: fixed; inset: 0; z-index: 10000;
@@ -1598,8 +1638,25 @@
         // Database.js boleh berisi daftar profil, tiap profil = satu Google Sheet / Apps Script sendiri:
         //   window.APP_CONFIG = { PROFILES: [ { id: 'a', name: 'Akun 1', API_URL: '...' }, { id: 'b', name: 'Akun 2', API_URL: '...' } ] };
         // Format lama ({ API_URL: '...' }) tetap jalan sebagai satu profil (tanpa pilihan profil).
+        // ───────── Mode akun (masuk / buat akun): satu Apps Script untuk SEMUA akun ─────────
+        // Aktif hanya kalau Database.js berisi  ACCOUNTS_URL: '<link /exec dari Code.gs>'.  Tanpa itu, aplikasi jalan persis seperti biasa.
+        const ACCOUNTS_URL = (window.APP_CONFIG && window.APP_CONFIG.ACCOUNTS_URL) || '';
+        const ACCOUNT_MODE = !!ACCOUNTS_URL;
+        const SESSION = (() => {
+            if (!ACCOUNT_MODE) return null;
+            try {
+                const x = JSON.parse(localStorage.getItem('acct:session') || 'null');
+                if (x && x.token && x.user && x.exp > Date.now()) return x;
+            } catch (e) {}
+            return null;
+        })();
+        const NEEDS_LOGIN = ACCOUNT_MODE && !SESSION;
+
         const PROFILES = (() => {
             const c = window.APP_CONFIG || {};
+            if (ACCOUNT_MODE) {
+                return SESSION ? [{ id: 'u:' + SESSION.user, name: SESSION.name || SESSION.user, API_URL: ACCOUNTS_URL, color: '', password: '' }] : [];
+            }
             if (Array.isArray(c.PROFILES) && c.PROFILES.length) {
                 return c.PROFILES.filter(p => p && p.API_URL).map((p, i) => ({
                     id: String(p.id || ('p' + (i + 1))), name: String(p.name || ('Akun ' + (i + 1))), API_URL: p.API_URL, color: p.color || '',
@@ -1623,6 +1680,11 @@
             return wanted || PROFILES[0];
         })();
         const API_URL = ACTIVE_PROFILE ? ACTIVE_PROFILE.API_URL : "";
+        // Alamat panggilan ke Apps Script. Mode biasa: persis seperti sebelumnya. Mode akun: ditambah tiket masuk.
+        function apiUrl(query) {
+            return ACCOUNT_MODE ? `${API_URL}?${query}&token=${encodeURIComponent(SESSION ? SESSION.token : '')}` : `${API_URL}?${query}`;
+        }
+        function dataQuery() { return ACCOUNT_MODE ? `action=get&_ts=${Date.now()}` : `_ts=${Date.now()}`; }
 
         // ───────── Sandi profil (kunci tampilan) ─────────
         // Kalau sebuah profil punya `password` di Database.js, aplikasi minta sandi itu dulu sebelum menampilkan / mengambil data Sheet-nya.
@@ -1656,9 +1718,9 @@
                 localStorage.removeItem('unlockUntil:' + p.id);
             } catch (e) {}
         }
-        const APP_LOCKED = !!(ACTIVE_PROFILE && ACTIVE_PROFILE.password) && !isProfileUnlocked(ACTIVE_PROFILE);
+        const APP_LOCKED = NEEDS_LOGIN || (!!(ACTIVE_PROFILE && ACTIVE_PROFILE.password) && !isProfileUnlocked(ACTIVE_PROFILE));
         // Data tersimpan dipisah per profil. Profil pertama memakai nama kunci lama, jadi cache yang sudah ada tidak hilang.
-        const PROFILE_SUFFIX = (ACTIVE_PROFILE && PROFILES.indexOf(ACTIVE_PROFILE) > 0) ? ':' + ACTIVE_PROFILE.id : '';
+        const PROFILE_SUFFIX = ACCOUNT_MODE ? (ACTIVE_PROFILE ? ':' + ACTIVE_PROFILE.id : ':none') : ((ACTIVE_PROFILE && PROFILES.indexOf(ACTIVE_PROFILE) > 0) ? ':' + ACTIVE_PROFILE.id : '');
         const CACHE_KEY = 'tradingDataCache' + PROFILE_SUFFIX;
         const CACHE_URL_KEY = 'tradingDataCacheUrl' + PROFILE_SUFFIX;
         const SIDE_MAP_KEY = 'tradeSideMap' + PROFILE_SUFFIX;
@@ -1827,10 +1889,12 @@
         // baris di Sheet pindah posisi & nomornya ikut berubah).
         function syncFromSheet() {
             if (!API_URL) return Promise.resolve();
-            return fetch(`${API_URL}?_ts=${Date.now()}`, { cache: 'no-store' })
+            return fetch(apiUrl(dataQuery()), { cache: 'no-store' })
                 .then(res => res.json())
                 .then(data => {
+                    if (checkAuthError(data)) return;
                     if (!data || !data.history) return;
+                    applyServerProfile(data.profile);
                     cachedGlobalResponse = data;
                     sortHistoryByClosedDate();
                     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
@@ -2119,6 +2183,401 @@
         }
 
         // ─────────── Pilih profil / Sheet ───────────
+
+        // ═══════════════ MODE AKUN: masuk, buat akun, profil, hapus akun, crop foto ═══════════════
+        // (Semua bagian ini hanya dipakai kalau Database.js berisi ACCOUNTS_URL.)
+        let loggingOut = false;
+
+        function acctPost(payload, ms) {
+            const ctl = new AbortController();
+            const timer = setTimeout(() => ctl.abort(), ms || 60000);
+            return fetch(ACCOUNTS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctl.signal, cache: 'no-store' })
+                .then(r => r.json())
+                .finally(() => clearTimeout(timer));
+        }
+        function persistSession() { try { localStorage.setItem('acct:session', JSON.stringify(SESSION)); } catch (e) {} }
+        function storePhoto(user, photo) {
+            try { if (photo) localStorage.setItem('avatar:u:' + user, photo); else localStorage.removeItem('avatar:u:' + user); } catch (e) {}
+        }
+        function cleanUrl() { const u = new URL(location.href); u.searchParams.delete('p'); return u.toString(); }
+
+        // Hapus semua data akun ini dari HP (sesi, cache, foto, pilihan Long/Short). Data di Sheet tidak tersentuh.
+        function clearAccountLocalData(user) {
+            try {
+                const suffix = ':u:' + user;
+                Object.keys(localStorage).forEach(k => { if (k === 'acct:session' || (user && k.endsWith(suffix))) localStorage.removeItem(k); });
+            } catch (e) {}
+        }
+        function forceLogout(msg) {
+            if (loggingOut) return;
+            loggingOut = true;
+            clearAccountLocalData(SESSION ? SESSION.user : '');
+            try { sessionStorage.setItem('authNotice', msg || 'Silakan masuk lagi'); } catch (e) {}
+            location.replace(cleanUrl());
+        }
+        function checkAuthError(data) {
+            if (ACCOUNT_MODE && data && data.error === 'auth') { forceLogout(data.msg || 'Sesi berakhir, silakan masuk lagi'); return true; }
+            return false;
+        }
+        // Panggilan yang hasilnya tidak dibaca (tambah / edit / hapus trade): di mode akun, tetap pantau kalau sesi habis
+        function watchAuth(p) {
+            if (!ACCOUNT_MODE) return p;
+            return p.then(res => { try { res.clone().json().then(checkAuthError).catch(() => {}); } catch (e) {} return res; });
+        }
+        // Nama / foto yang berubah dari HP lain ikut terbawa lewat data biasa
+        function applyServerProfile(pr) {
+            if (!ACCOUNT_MODE || !SESSION || !ACTIVE_PROFILE || !pr) return;
+            let changed = false;
+            if (pr.name && pr.name !== ACTIVE_PROFILE.name) { ACTIVE_PROFILE.name = pr.name; SESSION.name = pr.name; changed = true; }
+            if (pr.pv !== undefined && pr.pv !== SESSION.pv) {
+                SESSION.pv = pr.pv; persistSession();
+                acctPost({ action: 'me', token: SESSION.token }).then(r => {
+                    if (r && r.profile) { storePhoto(SESSION.user, r.profile.photo || ''); renderHeaderProfile(); }
+                }).catch(() => {});
+            }
+            if (changed) { persistSession(); renderHeaderProfile(); document.title = document.title.split(' · ')[0] + ' · ' + ACTIVE_PROFILE.name; }
+        }
+
+        // ── Dialog sederhana ──
+        function closeDialog() { document.querySelectorAll('.dlg-backdrop').forEach(el => el.remove()); }
+        function mkEl(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+        // o: { title, desc, danger, fields:[{id,label,type,value,placeholder,autocomplete,max}], okText, extra(node), onConfirm(vals, api) }
+        function showDialog(o) {
+            closeDialog();
+            const back = mkEl('div', 'dlg-backdrop');
+            const card = mkEl('div', 'dlg'); card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true');
+            card.appendChild(mkEl('div', 'dlg-title' + (o.danger ? ' is-danger' : ''), o.title));
+            if (o.desc) card.appendChild(mkEl('div', 'dlg-desc', o.desc));
+            const inputs = {};
+            (o.fields || []).forEach(f => {
+                const lab = mkEl('label', 'dlg-field'); lab.appendChild(mkEl('span', '', f.label));
+                const inp = document.createElement('input');
+                inp.type = f.type || 'text'; inp.value = f.value || ''; inp.placeholder = f.placeholder || '';
+                inp.autocomplete = f.autocomplete || 'off'; inp.setAttribute('autocapitalize', 'off'); inp.spellcheck = false;
+                if (f.max) inp.maxLength = f.max;
+                inputs[f.id] = inp; lab.appendChild(inp); card.appendChild(lab);
+            });
+            if (o.extra) card.appendChild(o.extra);
+            const err = mkEl('div', 'dlg-err'); err.setAttribute('role', 'alert'); card.appendChild(err);
+            const act = mkEl('div', 'dlg-actions');
+            const cancel = mkEl('button', 'dlg-cancel', o.cancelText || 'Batal'); cancel.type = 'button';
+            const ok = mkEl('button', 'dlg-ok' + (o.danger ? ' is-danger' : ''), o.okText || 'Simpan'); ok.type = 'button';
+            act.append(cancel, ok); card.appendChild(act);
+            back.appendChild(card); document.body.appendChild(back);
+            const api = {
+                card, inputs, ok, close: closeDialog,
+                setError: (m) => { err.textContent = m || ''; },
+                setBusy: (b) => { ok.disabled = b; cancel.disabled = b; ok.dataset.label = ok.dataset.label || ok.textContent; ok.textContent = b ? 'Memproses…' : ok.dataset.label; }
+            };
+            cancel.addEventListener('click', closeDialog);
+            const submit = async () => {
+                if (ok.disabled) return;
+                api.setError(''); api.setBusy(true);
+                try {
+                    const vals = {}; Object.keys(inputs).forEach(k => { vals[k] = inputs[k].value; });
+                    const keep = await o.onConfirm(vals, api);
+                    if (keep !== false) { /* onConfirm menutup dialog sendiri kalau sukses */ }
+                } catch (e) { api.setError(e && e.message ? e.message : 'Terjadi kesalahan'); }
+                if (document.body.contains(card)) api.setBusy(false);
+            };
+            ok.addEventListener('click', submit);
+            Object.values(inputs).forEach(i => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); }));
+            const first = Object.values(inputs)[0]; if (first) setTimeout(() => first.focus(), 60);
+            return api;
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDialog(); });
+
+        async function acctCall(payload) {
+            let r;
+            try { r = await acctPost(Object.assign({ token: SESSION ? SESSION.token : '' }, payload)); }
+            catch (e) { throw new Error('Tidak bisa terhubung ke server. Coba lagi.'); }
+            if (r && r.error === 'auth') { forceLogout(r.msg); throw new Error(r.msg || 'Sesi berakhir'); }
+            if (!r || r.error) throw new Error((r && r.msg) || 'Gagal');
+            return r;
+        }
+
+        // ── Layar masuk / buat akun ──
+        function showAuthScreen() {
+            if (document.getElementById('lockScreen')) return;
+            const el = mkEl('div'); el.id = 'lockScreen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+            const card = mkEl('div', 'lock-card');
+            card.appendChild(mkEl('div', 'lock-app', document.title.split(' · ')[0].toUpperCase()));
+            const tabs = mkEl('div', 'auth-tabs');
+            const tIn = mkEl('button', 'auth-tab is-on', 'Masuk'); tIn.type = 'button';
+            const tUp = mkEl('button', 'auth-tab', 'Buat akun'); tUp.type = 'button';
+            tabs.append(tIn, tUp); card.appendChild(tabs);
+            const notice = mkEl('div', 'auth-note');
+            try { const n = sessionStorage.getItem('authNotice'); if (n) { notice.textContent = n; sessionStorage.removeItem('authNotice'); } } catch (e) {}
+            card.appendChild(notice);
+            const field = (id, label, type, ac) => {
+                const w = mkEl('label', 'auth-field'); w.appendChild(mkEl('span', '', label));
+                const i = document.createElement('input'); i.className = 'auth-input'; i.type = type; i.id = id; i.autocomplete = ac;
+                i.setAttribute('autocapitalize', 'off'); i.spellcheck = false; w.appendChild(i);
+                return { w, i };
+            };
+            const fU = field('authUser', 'Nama pengguna', 'text', 'username');
+            const fName = field('authName', 'Nama yang ditampilkan', 'text', 'name');
+            const fP = field('authPass', 'Sandi', 'password', 'current-password');
+            const fP2 = field('authPass2', 'Ulangi sandi', 'password', 'new-password');
+            const fCode = field('authCode', 'Kode undangan', 'text', 'off');
+            [fU, fName, fP, fP2, fCode].forEach(f => card.appendChild(f.w));
+            const err = mkEl('div', 'lock-err'); err.setAttribute('role', 'alert'); card.appendChild(err);
+            const btn = mkEl('button', 'lock-btn', 'Masuk'); btn.type = 'button'; card.appendChild(btn);
+            const hint = mkEl('div', 'auth-hint'); card.appendChild(hint);
+            let mode = 'in';
+            const setMode = (m) => {
+                mode = m; err.textContent = '';
+                tIn.classList.toggle('is-on', m === 'in'); tUp.classList.toggle('is-on', m === 'up');
+                fName.w.style.display = fP2.w.style.display = fCode.w.style.display = (m === 'up') ? '' : 'none';
+                fP.i.autocomplete = (m === 'up') ? 'new-password' : 'current-password';
+                btn.textContent = (m === 'up') ? 'Buat akun' : 'Masuk';
+                hint.textContent = (m === 'up') ? 'Nama pengguna: huruf kecil, angka, atau _ (3-20 karakter). Kode undangan didapat dari admin.' : 'Datamu tersimpan di Google Sheet. Kalau sudah lama tidak dipakai, masuk pertama bisa butuh beberapa detik.';
+            };
+            tIn.addEventListener('click', () => setMode('in')); tUp.addEventListener('click', () => setMode('up'));
+            setMode('in');
+            const busy = (b) => { btn.disabled = b; if (b) { btn.dataset.l = btn.textContent; btn.textContent = 'Memproses…'; } else if (btn.dataset.l) btn.textContent = btn.dataset.l; };
+            const submit = async () => {
+                if (btn.disabled) return;
+                err.textContent = ''; notice.textContent = '';
+                const u = fU.i.value.trim().toLowerCase(), p = fP.i.value;
+                if (!u || !p) { err.textContent = 'Isi nama pengguna dan sandi'; return; }
+                let payload;
+                if (mode === 'up') {
+                    if (p !== fP2.i.value) { err.textContent = 'Ulangi sandi tidak sama'; return; }
+                    if (p.length < 6) { err.textContent = 'Sandi minimal 6 karakter'; return; }
+                    payload = { action: 'signup', u, name: fName.i.value.trim(), p, code: fCode.i.value.trim() };
+                } else payload = { action: 'login', u, p };
+                busy(true);
+                const slow = setTimeout(() => { notice.textContent = 'Masih menunggu server… (Apps Script yang lama tidak dipakai butuh beberapa detik untuk bangun)'; }, 6000);
+                try {
+                    const r = await acctPost(payload);
+                    if (r && r.ok && r.token) {
+                        const pr = r.profile || {};
+                        try { localStorage.setItem('acct:session', JSON.stringify({ token: r.token, exp: r.exp, user: pr.user, name: pr.name || pr.user, pv: pr.pv || '0' })); } catch (e) {}
+                        storePhoto(pr.user, pr.photo || '');
+                        location.replace(cleanUrl());
+                        return;
+                    }
+                    if (r && r.ok && r.status === 'menunggu') { setMode('in'); notice.textContent = r.msg || 'Akun dibuat. Tunggu admin menyetujui.'; fU.i.value = u; fP.i.value = ''; }
+                    else err.textContent = (r && r.msg) || 'Gagal masuk';
+                } catch (e) {
+                    err.textContent = 'Tidak bisa terhubung ke server. Periksa internet lalu coba lagi.';
+                } finally { clearTimeout(slow); busy(false); }
+            };
+            btn.addEventListener('click', submit);
+            card.querySelectorAll('input').forEach(i => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); }));
+            el.appendChild(card); document.body.appendChild(el);
+            setTimeout(() => fU.i.focus(), 60);
+        }
+
+        // ── Menu akun (ketuk bulatan profil) ──
+        function openAccountMenu(anchor) {
+            if (!SESSION || !ACTIVE_PROFILE) return;
+            if (document.querySelector('.profile-menu')) { closeProfileMenu(); return; }
+            const back = mkEl('div', 'profile-menu-backdrop'); back.addEventListener('click', closeProfileMenu);
+            const menu = mkEl('div', 'profile-menu'); menu.setAttribute('role', 'menu');
+            const head = mkEl('div', 'pm-head'); head.appendChild(makeAvatar(ACTIVE_PROFILE, 38));
+            const who = mkEl('div'); who.append(mkEl('b', '', ACTIVE_PROFILE.name), mkEl('small', '', '@' + SESSION.user));
+            head.appendChild(who); menu.appendChild(head);
+            const item = (label, fn, cls) => { const b = mkEl('button', cls || '', label); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.addEventListener('click', () => { closeProfileMenu(); fn(); }); menu.appendChild(b); };
+            item('Ubah nama', openRenameDialog);
+            item('Ganti foto', pickAvatar);
+            let hasPhoto = false; try { hasPhoto = !!localStorage.getItem('avatar:u:' + SESSION.user); } catch (e) {}
+            if (hasPhoto) item('Hapus foto', removePhotoAccount);
+            item('Ubah sandi', openPasswordDialog);
+            menu.appendChild(mkEl('div', 'pm-sep'));
+            item('Keluar', openLogoutDialog);
+            item('Hapus akun', openDeleteDialog, 'pm-danger');
+            document.body.append(back, menu);
+            const r = anchor.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
+            menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - mw - 8)) + 'px';
+            menu.style.top = (r.bottom + 8 + mh > window.innerHeight ? Math.max(8, r.top - mh - 8) : r.bottom + 8) + 'px';
+        }
+
+        function openRenameDialog() {
+            showDialog({
+                title: 'Ubah nama', desc: 'Nama yang tampil di samping foto profil. Nama pengguna untuk masuk tidak berubah.',
+                fields: [{ id: 'name', label: 'Nama', value: ACTIVE_PROFILE.name, max: 30 }], okText: 'Simpan',
+                onConfirm: async (v, api) => {
+                    const name = v.name.trim();
+                    if (!name) throw new Error('Nama tidak boleh kosong');
+                    const r = await acctCall({ action: 'profile', name });
+                    ACTIVE_PROFILE.name = r.profile.name; SESSION.name = r.profile.name; persistSession();
+                    renderHeaderProfile(); document.title = document.title.split(' · ')[0] + ' · ' + ACTIVE_PROFILE.name;
+                    api.close(); showToast('Nama diperbarui', 'success');
+                }
+            });
+        }
+        function openPasswordDialog() {
+            showDialog({
+                title: 'Ubah sandi',
+                fields: [
+                    { id: 'old', label: 'Sandi sekarang', type: 'password', autocomplete: 'current-password' },
+                    { id: 'n1', label: 'Sandi baru (minimal 6 karakter)', type: 'password', autocomplete: 'new-password' },
+                    { id: 'n2', label: 'Ulangi sandi baru', type: 'password', autocomplete: 'new-password' }
+                ], okText: 'Simpan',
+                onConfirm: async (v, api) => {
+                    if (v.n1.length < 6) throw new Error('Sandi baru minimal 6 karakter');
+                    if (v.n1 !== v.n2) throw new Error('Ulangi sandi baru tidak sama');
+                    const r = await acctCall({ action: 'changePassword', old: v.old, new: v.n1 });
+                    SESSION.token = r.token; SESSION.exp = r.exp; persistSession();
+                    api.close(); showToast('Sandi diperbarui', 'success');
+                }
+            });
+        }
+        function openLogoutDialog() {
+            showDialog({
+                title: 'Keluar dari akun?', desc: 'Data di HP ini (cache, foto, pilihan Long/Short) akan dihapus. Data di Google Sheet tetap aman dan muncul lagi kalau kamu masuk.',
+                okText: 'Keluar',
+                onConfirm: async () => { forceLogout('Kamu sudah keluar.'); }
+            });
+        }
+        function removePhotoAccount() {
+            acctCall({ action: 'profile', photo: '' }).then(r => { storePhoto(SESSION.user, ''); SESSION.pv = r.profile.pv; persistSession(); renderHeaderProfile(); showToast('Foto dihapus', 'success'); })
+                .catch(e => showToast(e.message || 'Gagal menghapus foto', 'error'));
+        }
+        async function uploadPhoto(dataUrl) {
+            try {
+                const r = await acctCall({ action: 'profile', photo: dataUrl });
+                storePhoto(SESSION.user, dataUrl); SESSION.pv = r.profile.pv; persistSession();
+                renderHeaderProfile(); showToast('Foto akun diperbarui', 'success');
+            } catch (e) { showToast(e.message || 'Foto gagal disimpan', 'error'); }
+        }
+
+        // ── Cadangan CSV (sebelum hapus akun) ──
+        function downloadBackupCsv() {
+            const rows = ((cachedGlobalResponse && cachedGlobalResponse.history) || []).slice().reverse();
+            const esc = (x) => { const t = String(x === undefined || x === null ? '' : x); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+            const lines = ['No,Opened,Closed,Pair,Side,PNL (USDT)'].concat(rows.map(h => [h.no, h.opened, h.closed, h.pair, h.side || '', h.pnl].map(esc).join(',')));
+            const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = 'cadangan-' + (SESSION ? SESSION.user : 'akun') + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+            return rows.length;
+        }
+
+        // ── Hapus akun: sandi + ketik HAPUS AKUN + hitung mundur ──
+        function openDeleteDialog() {
+            const n = (cachedGlobalResponse && cachedGlobalResponse.history) ? cachedGlobalResponse.history.length : 0;
+            const extra = mkEl('div');
+            const bk = mkEl('button', 'dlg-link', 'Unduh cadangan (CSV) dulu'); bk.type = 'button';
+            bk.addEventListener('click', () => { const c = downloadBackupCsv(); showToast(c + ' trade diunduh', 'success'); });
+            extra.appendChild(bk);
+            const dlg = showDialog({
+                title: 'Hapus akun', danger: true,
+                desc: 'Akun ' + ACTIVE_PROFILE.name + ' akan dinonaktifkan dan tidak bisa masuk lagi. ' + n + ' trade di Sheet TIDAK ikut terhapus dan masih bisa dipulihkan admin. Untuk lanjut, masukkan sandi lalu ketik HAPUS AKUN.',
+                fields: [
+                    { id: 'p', label: 'Sandi', type: 'password', autocomplete: 'current-password' },
+                    { id: 'c', label: 'Ketik: HAPUS AKUN', placeholder: 'HAPUS AKUN' }
+                ], okText: 'Hapus akun', extra,
+                onConfirm: async (v, api) => {
+                    if (v.c !== 'HAPUS AKUN') throw new Error('Ketik HAPUS AKUN persis (huruf besar)');
+                    if (!v.p) throw new Error('Masukkan sandi');
+                    await acctCall({ action: 'deleteAccount', p: v.p, confirm: 'HAPUS AKUN' });
+                    forceLogout('Akun sudah dihapus. Data di Sheet masih tersimpan dan bisa dipulihkan admin.');
+                }
+            });
+            // Tombol hapus baru aktif kalau tulisan benar, sandi terisi, dan hitung mundur 5 detik selesai
+            let left = 5;
+            const refresh = () => {
+                const okTxt = dlg.inputs.c.value === 'HAPUS AKUN' && dlg.inputs.p.value.length > 0;
+                dlg.ok.disabled = !(okTxt && left <= 0);
+                dlg.ok.dataset.label = left > 0 ? 'Hapus akun (' + left + ')' : 'Hapus akun';
+                if (!dlg.ok.textContent.startsWith('Memproses')) dlg.ok.textContent = dlg.ok.dataset.label;
+            };
+            dlg.inputs.c.addEventListener('input', refresh); dlg.inputs.p.addEventListener('input', refresh);
+            const tm = setInterval(() => { if (!document.body.contains(dlg.card)) { clearInterval(tm); return; } left--; refresh(); if (left <= 0) clearInterval(tm); }, 1000);
+            refresh();
+        }
+
+        // ── Crop foto: geser, cubit / roda mouse / slider untuk zoom ──
+        function openCropper(file) {
+            return new Promise((resolve) => {
+                const objUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.onerror = () => { URL.revokeObjectURL(objUrl); showToast('Gambar tidak bisa dibuka', 'error'); resolve(null); };
+                img.onload = () => {
+                    URL.revokeObjectURL(objUrl);
+                    let src = img, W = img.naturalWidth, H = img.naturalHeight;
+                    const MAXD = 1600;                       // foto besar diperkecil dulu supaya geser & zoom tetap lancar
+                    if (Math.max(W, H) > MAXD) {
+                        const k = MAXD / Math.max(W, H), c = document.createElement('canvas');
+                        c.width = Math.round(W * k); c.height = Math.round(H * k);
+                        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); src = c; W = c.width; H = c.height;
+                    }
+                    build(src, W, H);
+                };
+                img.src = objUrl;
+
+                function build(src, W, H) {
+                    const S = Math.max(200, Math.min(320, window.innerWidth - 56)), BOX = Math.round(S * 0.82), dpr = Math.min(2, window.devicePixelRatio || 1);
+                    const back = mkEl('div', 'dlg-backdrop'); const card = mkEl('div', 'dlg');
+                    card.appendChild(mkEl('div', 'dlg-title', 'Atur foto profil'));
+                    card.appendChild(mkEl('div', 'dlg-desc', 'Geser foto, lalu cubit atau pakai slider untuk memperbesar. Bagian di dalam lingkaran yang akan dipakai.'));
+                    const stage = mkEl('div', 'crop-stage'); stage.style.width = stage.style.height = S + 'px';
+                    const cv = document.createElement('canvas'); cv.width = cv.height = Math.round(S * dpr); stage.appendChild(cv);
+                    const ring = mkEl('div', 'crop-ring'); ring.style.cssText = 'left:' + (S - BOX) / 2 + 'px;top:' + (S - BOX) / 2 + 'px;width:' + BOX + 'px;height:' + BOX + 'px';
+                    stage.appendChild(ring); card.appendChild(stage);
+                    const zoomRow = mkEl('div', 'crop-zoom'); zoomRow.appendChild(mkEl('span', '', '−'));
+                    const slider = document.createElement('input'); slider.type = 'range'; slider.min = '1'; slider.max = '6'; slider.step = '0.01'; slider.value = '1'; slider.setAttribute('aria-label', 'Zoom');
+                    zoomRow.appendChild(slider); zoomRow.appendChild(mkEl('span', '', '+')); card.appendChild(zoomRow);
+                    const act = mkEl('div', 'dlg-actions');
+                    const cancel = mkEl('button', 'dlg-cancel', 'Batal'); cancel.type = 'button';
+                    const ok = mkEl('button', 'dlg-ok', 'Pakai foto'); ok.type = 'button';
+                    act.append(cancel, ok); card.appendChild(act); back.appendChild(card); document.body.appendChild(back);
+
+                    const minS = BOX / Math.min(W, H);
+                    let scale = minS, cx = S / 2, cy = S / 2;
+                    const ctx = cv.getContext('2d');
+                    const clamp = () => {
+                        const hw = W * scale / 2, hh = H * scale / 2, lo = (S - BOX) / 2, hi = (S + BOX) / 2;
+                        cx = Math.min(lo + hw, Math.max(hi - hw, cx)); cy = Math.min(lo + hh, Math.max(hi - hh, cy));
+                    };
+                    const draw = () => {
+                        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, S, S);
+                        ctx.drawImage(src, cx - W * scale / 2, cy - H * scale / 2, W * scale, H * scale);
+                    };
+                    const setScale = (ns, ax, ay) => {          // zoom dengan titik (ax, ay) tetap di tempatnya
+                        ns = Math.min(minS * 6, Math.max(minS, ns));
+                        const ix = (ax - cx) / scale, iy = (ay - cy) / scale;
+                        scale = ns; cx = ax - ix * scale; cy = ay - iy * scale; clamp();
+                        slider.value = String(scale / minS); draw();
+                    };
+                    clamp(); draw();
+
+                    const ptrs = new Map(); let lastDist = 0;
+                    const pos = (e) => { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+                    stage.addEventListener('pointerdown', (e) => { stage.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, pos(e)); lastDist = 0; });
+                    stage.addEventListener('pointermove', (e) => {
+                        if (!ptrs.has(e.pointerId)) return;
+                        const prev = ptrs.get(e.pointerId), cur = pos(e);
+                        if (ptrs.size === 1) { cx += cur.x - prev.x; cy += cur.y - prev.y; clamp(); draw(); }
+                        ptrs.set(e.pointerId, cur);
+                        if (ptrs.size === 2) {
+                            const [a, b] = Array.from(ptrs.values()), d = Math.hypot(a.x - b.x, a.y - b.y);
+                            if (lastDist) setScale(scale * d / lastDist, (a.x + b.x) / 2, (a.y + b.y) / 2);
+                            lastDist = d;
+                        }
+                    });
+                    const up = (e) => { ptrs.delete(e.pointerId); lastDist = 0; };
+                    stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+                    stage.addEventListener('wheel', (e) => { e.preventDefault(); const p = pos(e); setScale(scale * Math.exp(-e.deltaY * 0.0015), p.x, p.y); }, { passive: false });
+                    slider.addEventListener('input', () => setScale(minS * parseFloat(slider.value), S / 2, S / 2));
+
+                    const finish = (val) => { document.removeEventListener('keydown', onKey, true); back.remove(); resolve(val); };
+                    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); finish(null); } };
+                    document.addEventListener('keydown', onKey, true);
+                    cancel.addEventListener('click', () => finish(null));
+                    ok.addEventListener('click', () => {
+                        const lo = (S - BOX) / 2, left = cx - W * scale / 2, top = cy - H * scale / 2;
+                        const out = document.createElement('canvas'); out.width = out.height = 192;
+                        out.getContext('2d').drawImage(src, (lo - left) / scale, (lo - top) / scale, BOX / scale, BOX / scale, 0, 0, 192, 192);
+                        finish(out.toDataURL('image/jpeg', 0.85));
+                    });
+                }
+            });
+        }
+
         // ── Avatar profil: foto (dari galeri, tersimpan di perangkat ini) atau bulatan 2 huruf ──
         const AVATAR_COLORS = ['#34d399', '#60a5fa', '#f59e0b', '#f472b6', '#a78bfa', '#fb7185', '#2dd4bf', '#facc15'];
         function profileInitials(name) {
@@ -2178,7 +2637,10 @@
                 inp.remove();
                 if (!f) return;
                 try {
-                    localStorage.setItem('avatar:' + ACTIVE_PROFILE.id, await fileToAvatar(f, 192));
+                    const cropped = await openCropper(f);          // geser & zoom dulu, baru dipakai
+                    if (!cropped) return;
+                    if (ACCOUNT_MODE) { await uploadPhoto(cropped); return; }
+                    localStorage.setItem('avatar:' + ACTIVE_PROFILE.id, cropped);
                     renderHeaderProfile();
                     showToast('Foto akun diperbarui', 'success');
                 } catch (e) { showToast('Foto tidak bisa dipakai, coba gambar lain', 'error'); }
@@ -2205,7 +2667,7 @@
         }
         function initProfileSwitcher() {
             const hdr = document.getElementById('appHeader');
-            if (!hdr || PROFILES.length < 2 || !ACTIVE_PROFILE) return;
+            if (!hdr || !ACTIVE_PROFILE || (!ACCOUNT_MODE && PROFILES.length < 2)) return;
             hdr.hidden = false;
             renderHeaderProfile();
             document.title = document.title.split(' · ')[0] + ' · ' + ACTIVE_PROFILE.name;
@@ -2216,6 +2678,7 @@
         }
 
         function openProfileMenu(anchor) {
+            if (ACCOUNT_MODE) { openAccountMenu(anchor); return; }
             if (PROFILES.length < 2) return;
             if (document.querySelector('.profile-menu')) { closeProfileMenu(); return; }
             const back = document.createElement('div');
@@ -2330,7 +2793,7 @@
         // (onload baru jalan setelah SEMUA file luar -- CSS/font dari CDN -- selesai dimuat).
         document.addEventListener('DOMContentLoaded', () => {
             initProfileSwitcher();
-            if (APP_LOCKED) { showLockScreen(); return; }   // terkunci: tidak ada data yang ditampilkan atau diambil
+            if (APP_LOCKED) { if (NEEDS_LOGIN) showAuthScreen(); else showLockScreen(); return; }   // terkunci: tidak ada data yang ditampilkan atau diambil
             checkCacheUrl();
             renderFromCache();
             startInitialFetch();   // permintaan ke Sheet langsung berangkat, tidak nunggu font/CSS CDN selesai (window.onload)
@@ -2345,10 +2808,12 @@
             initialFetchStarted = true;
             const hadCachedRender = cacheRenderedEarly;
             document.body.classList.add('is-syncing');
-            (API_URL ? fetch(`${API_URL}?_ts=${Date.now()}`, { cache: 'no-store' }) : Promise.reject(new Error('API_URL kosong - cek Database.js')))
+            (API_URL ? fetch(apiUrl(dataQuery()), { cache: 'no-store' }) : Promise.reject(new Error('API_URL kosong - cek Database.js')))
                 .then(res => res.json())
                 .then(data => {
+                    if (checkAuthError(data)) return;
                     if (!data || !Array.isArray(data.history)) throw new Error('Respons Sheet tidak valid');
+                    applyServerProfile(data.profile);
                     cachedGlobalResponse = data;
                     sortHistoryByClosedDate();
                     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
@@ -2371,7 +2836,7 @@
         window.onload = function() {
             // Kalau link sheet diganti, buang cache data dari sheet sebelumnya
             checkCacheUrl();
-            if (!API_URL) showToast('API_URL kosong, cek file Database.js', 'error');
+            if (!API_URL && !NEEDS_LOGIN) showToast('API_URL kosong, cek file Database.js', 'error');
 
             fetchRealtimeKurs();
             switchTab('rekap', true);
@@ -2514,7 +2979,7 @@
             const encPnl = encodeURIComponent(pnlVal);
             const encSide = encodeURIComponent(formSide);
 
-            fetch(`${API_URL}?action=add&pair=${encPair}&opened=${encOpened}&closed=${encClosed}&pnl=${encPnl}&side=${encSide}`, { cache: 'no-store' })
+            watchAuth(fetch(apiUrl(`action=add&pair=${encPair}&opened=${encOpened}&closed=${encClosed}&pnl=${encPnl}&side=${encSide}`), { cache: 'no-store' }))
                 .catch(err => {
                     console.log(err);
                     showToast("Gagal sync ke Sheet", "error");
@@ -2601,11 +3066,11 @@
             renderDashboard(cachedGlobalResponse);
             showToast("Trade diupdate", "success");
 
-            let url = `${API_URL}?action=edit&no=${encodeURIComponent(no)}&pair=${encodeURIComponent(newPair)}&pnl=${encodeURIComponent(newPnl)}&side=${encodeURIComponent(newSide)}`;
-            if (newOpenedISO) url += `&opened=${encodeURIComponent(newOpenedISO)}`;
-            if (newClosedISO) url += `&closed=${encodeURIComponent(newClosedISO)}`;
+            let query = `action=edit&no=${encodeURIComponent(no)}&pair=${encodeURIComponent(newPair)}&pnl=${encodeURIComponent(newPnl)}&side=${encodeURIComponent(newSide)}`;
+            if (newOpenedISO) query += `&opened=${encodeURIComponent(newOpenedISO)}`;
+            if (newClosedISO) query += `&closed=${encodeURIComponent(newClosedISO)}`;
 
-            fetch(url, { cache: 'no-store' })
+            watchAuth(fetch(apiUrl(query), { cache: 'no-store' }))
                 .then(() => { if (closedChanged) return syncFromSheet(); })
                 .catch(err => {
                     console.log(err);
@@ -2635,7 +3100,7 @@
 
             showToast("Terhapus", "error");
 
-            fetch(`${API_URL}?action=delete&no=${no}`, { cache: 'no-store' })
+            watchAuth(fetch(apiUrl(`action=delete&no=${no}`), { cache: 'no-store' }))
                 .catch(err => {
                     console.log(err);
                     showToast("Gagal hapus di Sheet", "error");
