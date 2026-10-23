@@ -917,6 +917,8 @@
         #lockScreen .auth-note { margin: 2px 0 10px; font-size: 12px; line-height: 1.45; color: var(--accent-bright); }
         #lockScreen .auth-hint { margin-top: 12px; font-size: 11px; line-height: 1.45; color: var(--text-faint); }
         #lockScreen .lock-btn[disabled] { opacity: .55; cursor: default; }
+        #lockScreen .auth-cancel { display: block; width: 100%; margin-top: 14px; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 600; font-family: inherit; color: var(--text-dim); background: transparent; border: 0; cursor: pointer; }
+        .profile-menu small.pm-sub { margin-left: 2px; font-size: 10px; font-weight: 500; color: var(--text-faint); }
         .dlg-backdrop { position: fixed; inset: 0; z-index: 10001; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(4,5,8,.72); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); overflow-y: auto; }
         .dlg { width: 100%; max-width: 350px; padding: 18px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: pmIn .18s var(--g-ease, ease-out); }
         .dlg-title { font-size: 16px; font-weight: 800; color: var(--text); }
@@ -1642,13 +1644,24 @@
         // Aktif hanya kalau Database.js berisi  ACCOUNTS_URL: '<link /exec dari Code.gs>'.  Tanpa itu, aplikasi jalan persis seperti biasa.
         const ACCOUNTS_URL = (window.APP_CONFIG && window.APP_CONFIG.ACCOUNTS_URL) || '';
         const ACCOUNT_MODE = !!ACCOUNTS_URL;
+        // Semua akun yang sedang masuk di HP ini: { namaPengguna: { token, exp, user, name, pv } }.
+        // Yang disimpan adalah TIKET login (berlaku 30 hari atau sampai keluar), bukan sandi, jadi pindah akun cukup sekali ketuk.
+        function readSessions() {
+            const out = {};
+            try {
+                const map = JSON.parse(localStorage.getItem('acct:sessions') || 'null') || {};
+                Object.keys(map).forEach(u => { const x = map[u]; if (x && x.token && x.user && x.exp > Date.now()) out[u] = x; });
+                const old = JSON.parse(localStorage.getItem('acct:session') || 'null');       // format lama (satu akun)
+                if (old && old.token && old.user && old.exp > Date.now() && !out[old.user]) out[old.user] = old;
+            } catch (e) {}
+            return out;
+        }
+        const SESSIONS = ACCOUNT_MODE ? readSessions() : {};
         const SESSION = (() => {
             if (!ACCOUNT_MODE) return null;
-            try {
-                const x = JSON.parse(localStorage.getItem('acct:session') || 'null');
-                if (x && x.token && x.user && x.exp > Date.now()) return x;
-            } catch (e) {}
-            return null;
+            let want = null;
+            try { want = localStorage.getItem('acct:active') || (JSON.parse(localStorage.getItem('acct:session') || 'null') || {}).user; } catch (e) {}
+            return SESSIONS[want] || SESSIONS[Object.keys(SESSIONS)[0]] || null;
         })();
         const NEEDS_LOGIN = ACCOUNT_MODE && !SESSION;
 
@@ -2195,7 +2208,48 @@
                 .then(r => r.json())
                 .finally(() => clearTimeout(timer));
         }
-        function persistSession() { try { localStorage.setItem('acct:session', JSON.stringify(SESSION)); } catch (e) {} }
+        function persistSession() {
+            try {
+                SESSIONS[SESSION.user] = SESSION;
+                localStorage.setItem('acct:sessions', JSON.stringify(SESSIONS));
+                localStorage.setItem('acct:active', SESSION.user);
+                localStorage.removeItem('acct:session');
+            } catch (e) {}
+        }
+        // Simpan tiket dari respons masuk / daftar yang berhasil, jadikan akun aktif (akun lain di HP ini tetap ada)
+        function addSessionFromLogin(r) {
+            const pr = r.profile || {};
+            try {
+                const map = readSessions();
+                map[pr.user] = { token: r.token, exp: r.exp, user: pr.user, name: pr.name || pr.user, pv: pr.pv || '0' };
+                localStorage.setItem('acct:sessions', JSON.stringify(map));
+                localStorage.setItem('acct:active', pr.user);
+                localStorage.removeItem('acct:session');
+            } catch (e) {}
+            storePhoto(pr.user, pr.photo || '');
+        }
+        function switchAccount(user) {
+            try { localStorage.setItem('acct:active', user); } catch (e) {}
+            location.replace(cleanUrl());
+        }
+        // Keluarkan satu akun dari HP ini (tiket + data lokalnya). Data di Sheet tidak tersentuh.
+        function removeAccountSession(user) {
+            clearAccountLocalData(user);
+            try {
+                const map = readSessions(); delete map[user];
+                localStorage.setItem('acct:sessions', JSON.stringify(map));
+                localStorage.removeItem('acct:session');
+                const rest = Object.keys(map);
+                if (localStorage.getItem('acct:active') === user) { if (rest.length) localStorage.setItem('acct:active', rest[0]); else localStorage.removeItem('acct:active'); }
+            } catch (e) {}
+        }
+        function logoutAll() {
+            if (loggingOut) return;
+            loggingOut = true;
+            Object.keys(readSessions()).forEach(u => clearAccountLocalData(u));
+            try { localStorage.removeItem('acct:sessions'); localStorage.removeItem('acct:active'); localStorage.removeItem('acct:session'); sessionStorage.setItem('authNotice', 'Kamu sudah keluar dari semua akun.'); } catch (e) {}
+            location.replace(cleanUrl());
+        }
         function storePhoto(user, photo) {
             try { if (photo) localStorage.setItem('avatar:u:' + user, photo); else localStorage.removeItem('avatar:u:' + user); } catch (e) {}
         }
@@ -2205,13 +2259,13 @@
         function clearAccountLocalData(user) {
             try {
                 const suffix = ':u:' + user;
-                Object.keys(localStorage).forEach(k => { if (k === 'acct:session' || (user && k.endsWith(suffix))) localStorage.removeItem(k); });
+                Object.keys(localStorage).forEach(k => { if (user && k.endsWith(suffix)) localStorage.removeItem(k); });
             } catch (e) {}
         }
         function forceLogout(msg) {
             if (loggingOut) return;
             loggingOut = true;
-            clearAccountLocalData(SESSION ? SESSION.user : '');
+            if (SESSION) removeAccountSession(SESSION.user);      // akun lain di HP ini (kalau ada) tetap masuk
             try { sessionStorage.setItem('authNotice', msg || 'Silakan masuk lagi'); } catch (e) {}
             location.replace(cleanUrl());
         }
@@ -2297,7 +2351,8 @@
         }
 
         // ── Layar masuk / buat akun ──
-        function showAuthScreen() {
+        function showAuthScreen(opts) {
+            const addMode = !!(opts && opts.add);
             if (document.getElementById('lockScreen')) return;
             const el = mkEl('div'); el.id = 'lockScreen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
             const card = mkEl('div', 'lock-card');
@@ -2324,17 +2379,33 @@
             const err = mkEl('div', 'lock-err'); err.setAttribute('role', 'alert'); card.appendChild(err);
             const btn = mkEl('button', 'lock-btn', 'Masuk'); btn.type = 'button'; card.appendChild(btn);
             const hint = mkEl('div', 'auth-hint'); card.appendChild(hint);
+            if (addMode) {
+                const cancel = mkEl('button', 'auth-cancel', 'Batal, kembali ke akun saya'); cancel.type = 'button';
+                cancel.addEventListener('click', () => el.remove()); card.appendChild(cancel);
+            }
             let mode = 'in';
+            let needCode = false;          // kolom kode undangan cuma muncul kalau server memintanya (mode "kode")
+            let regMode = '';
             const setMode = (m) => {
                 mode = m; err.textContent = '';
                 tIn.classList.toggle('is-on', m === 'in'); tUp.classList.toggle('is-on', m === 'up');
-                fName.w.style.display = fP2.w.style.display = fCode.w.style.display = (m === 'up') ? '' : 'none';
+                fName.w.style.display = fP2.w.style.display = (m === 'up') ? '' : 'none';
+                fCode.w.style.display = (m === 'up' && needCode) ? '' : 'none';
                 fP.i.autocomplete = (m === 'up') ? 'new-password' : 'current-password';
                 btn.textContent = (m === 'up') ? 'Buat akun' : 'Masuk';
-                hint.textContent = (m === 'up') ? 'Nama pengguna: huruf kecil, angka, atau _ (3-20 karakter). Kode undangan didapat dari admin.' : 'Datamu tersimpan di Google Sheet. Kalau sudah lama tidak dipakai, masuk pertama bisa butuh beberapa detik.';
+                if (m === 'up') {
+                    hint.textContent = 'Nama pengguna: huruf kecil, angka, atau _ (3-20 karakter).'
+                        + (needCode ? ' Kode undangan didapat dari admin.' : '')
+                        + (regMode === 'persetujuan' ? ' Akun baru perlu disetujui admin dulu sebelum bisa masuk.' : '')
+                        + (regMode === 'tutup' ? ' Pendaftaran sedang ditutup.' : '');
+                } else hint.textContent = 'Datamu tersimpan di Google Sheet. Kalau sudah lama tidak dipakai, masuk pertama bisa butuh beberapa detik.';
             };
             tIn.addEventListener('click', () => setMode('in')); tUp.addEventListener('click', () => setMode('up'));
             setMode('in');
+            // Tanya server mode pendaftarannya (tanpa data apa pun) supaya kolom kode cuma muncul kalau diminta
+            fetch(ACCOUNTS_URL + '?action=ping', { cache: 'no-store' }).then(r => r.json()).then(d => {
+                if (d && d.mode) { regMode = d.mode; needCode = (d.mode === 'kode'); setMode(mode); }
+            }).catch(() => {});
             const busy = (b) => { btn.disabled = b; if (b) { btn.dataset.l = btn.textContent; btn.textContent = 'Memproses…'; } else if (btn.dataset.l) btn.textContent = btn.dataset.l; };
             const submit = async () => {
                 if (btn.disabled) return;
@@ -2353,12 +2424,12 @@
                     const r = await acctPost(payload);
                     if (r && r.ok && r.token) {
                         const pr = r.profile || {};
-                        try { localStorage.setItem('acct:session', JSON.stringify({ token: r.token, exp: r.exp, user: pr.user, name: pr.name || pr.user, pv: pr.pv || '0' })); } catch (e) {}
-                        storePhoto(pr.user, pr.photo || '');
+                        addSessionFromLogin(r);
                         location.replace(cleanUrl());
                         return;
                     }
                     if (r && r.ok && r.status === 'menunggu') { setMode('in'); notice.textContent = r.msg || 'Akun dibuat. Tunggu admin menyetujui.'; fU.i.value = u; fP.i.value = ''; }
+                    else if (r && r.error === 'code') { needCode = true; setMode('up'); err.textContent = r.msg || 'Kode undangan salah'; fCode.i.focus(); }
                     else err.textContent = (r && r.msg) || 'Gagal masuk';
                 } catch (e) {
                     err.textContent = 'Tidak bisa terhubung ke server. Periksa internet lalu coba lagi.';
@@ -2376,9 +2447,21 @@
             if (document.querySelector('.profile-menu')) { closeProfileMenu(); return; }
             const back = mkEl('div', 'profile-menu-backdrop'); back.addEventListener('click', closeProfileMenu);
             const menu = mkEl('div', 'profile-menu'); menu.setAttribute('role', 'menu');
-            const head = mkEl('div', 'pm-head'); head.appendChild(makeAvatar(ACTIVE_PROFILE, 38));
-            const who = mkEl('div'); who.append(mkEl('b', '', ACTIVE_PROFILE.name), mkEl('small', '', '@' + SESSION.user));
-            head.appendChild(who); menu.appendChild(head);
+            const users = Object.keys(SESSIONS);
+            menu.appendChild(mkEl('div', 'pm-title', users.length > 1 ? 'AKUN DI HP INI' : 'AKUN'));
+            users.forEach(u => {
+                const ss = SESSIONS[u], active = (u === SESSION.user);
+                const b = mkEl('button', active ? 'is-active' : ''); b.type = 'button'; b.setAttribute('role', 'menuitem');
+                b.append(makeAvatar({ id: 'u:' + u, name: ss.name || u }, 28), mkEl('span', '', ss.name || u), mkEl('small', 'pm-sub', '@' + u));
+                if (active) {
+                    const ck = mkEl('span', 'pm-check'); ck.style.marginLeft = 'auto';
+                    ck.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5,6.5 5,9 9.5,3.5"/></svg>';
+                    b.appendChild(ck);
+                }
+                b.addEventListener('click', () => { closeProfileMenu(); if (!active) switchAccount(u); });
+                menu.appendChild(b);
+            });
+            menu.appendChild(mkEl('div', 'pm-sep'));
             const item = (label, fn, cls) => { const b = mkEl('button', cls || '', label); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.addEventListener('click', () => { closeProfileMenu(); fn(); }); menu.appendChild(b); };
             item('Ubah nama', openRenameDialog);
             item('Ganti foto', pickAvatar);
@@ -2386,7 +2469,9 @@
             if (hasPhoto) item('Hapus foto', removePhotoAccount);
             item('Ubah sandi', openPasswordDialog);
             menu.appendChild(mkEl('div', 'pm-sep'));
+            item('Tambah akun lain', () => showAuthScreen({ add: true }));
             item('Keluar', openLogoutDialog);
+            if (users.length > 1) item('Keluar dari semua akun', openLogoutAllDialog);
             item('Hapus akun', openDeleteDialog, 'pm-danger');
             document.body.append(back, menu);
             const r = anchor.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
@@ -2426,10 +2511,21 @@
             });
         }
         function openLogoutDialog() {
+            const others = Object.keys(SESSIONS).length - 1;
             showDialog({
-                title: 'Keluar dari akun?', desc: 'Data di HP ini (cache, foto, pilihan Long/Short) akan dihapus. Data di Google Sheet tetap aman dan muncul lagi kalau kamu masuk.',
+                title: 'Keluar dari akun ' + ACTIVE_PROFILE.name + '?',
+                desc: 'Data akun ini di HP (cache, foto, pilihan Long/Short) akan dihapus. Data di Google Sheet tetap aman dan muncul lagi kalau kamu masuk.'
+                    + (others > 0 ? ' Kamu akan pindah ke akun lain yang masih masuk di HP ini.' : ''),
                 okText: 'Keluar',
-                onConfirm: async () => { forceLogout('Kamu sudah keluar.'); }
+                onConfirm: async () => { forceLogout('Kamu sudah keluar dari ' + ACTIVE_PROFILE.name + '.'); }
+            });
+        }
+        function openLogoutAllDialog() {
+            showDialog({
+                title: 'Keluar dari semua akun?',
+                desc: 'Semua akun di HP ini keluar dan data lokalnya dihapus. Data di Google Sheet tetap aman.',
+                okText: 'Keluar semua',
+                onConfirm: async () => { logoutAll(); }
             });
         }
         function removePhotoAccount() {
@@ -2797,6 +2893,9 @@
             checkCacheUrl();
             renderFromCache();
             startInitialFetch();   // permintaan ke Sheet langsung berangkat, tidak nunggu font/CSS CDN selesai (window.onload)
+            if (ACCOUNT_MODE && SESSION) {   // mis. setelah keluar dari satu akun lalu otomatis pindah ke akun lain
+                try { const n = sessionStorage.getItem('authNotice'); if (n) { sessionStorage.removeItem('authNotice'); showToast(n, 'success'); } } catch (e) {}
+            }
         });
 
         // Ambil data segar dari Google Sheet (sekali saat aplikasi dibuka).
