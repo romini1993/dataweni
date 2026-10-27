@@ -748,13 +748,15 @@
                 border-right-width: 0 !important;
             }
 
-            /* hero: kurva bablas sampai ujung kiri-kanan & dasar kartu */
+            /* hero: kurva tetap sampai dasar kartu, tapi kiri-kanan diberi jarak dari tepi layar
+               (12px padding kartu + 4px = 16px) supaya tahan & geser di ujung tidak mentok ke tepi.
+               Mau jaraknya lebih lebar/sempit: ubah angka 4px dan 8px (8px = 2 x 4px). */
             .hero-panel { padding: 14px 12px 0 12px !important; }
             .hero-panel #equityCurve {
                 height: 88px;
-                margin-left: -12px;
-                margin-right: -12px;
-                width: calc(100% + 24px);
+                margin-left: 4px;
+                margin-right: 4px;
+                width: calc(100% - 8px);
             }
 
             /* form input */
@@ -4608,8 +4610,10 @@
                 tooltip.classList.remove('hidden');
                 tooltip.style.left = '0px';
                 const tw = tooltip.offsetWidth || 32;
-                let left = leftPx - tw / 2;
-                left = Math.max(0, Math.min(rect.width - tw, left));
+                // posisi tooltip relatif ke pembungkusnya, jadi geser sebesar jarak kurva dari tepi pembungkus (margin kurva)
+                const off = container.offsetLeft;
+                let left = off + leftPx - tw / 2;
+                left = Math.max(off, Math.min(off + rect.width - tw, left));
                 tooltip.style.left = `${left}px`;
             };
 
