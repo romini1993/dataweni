@@ -1244,11 +1244,11 @@
                 <div class="grid grid-cols-2 gap-2.5">
                     <div class="field">
                         <span class="field-label">Opened</span>
-                        <input type="text" id="opened" required placeholder="dd/mm/yyyy" class="w-full porto-input rounded-xl px-3.5 text-sm">
+                        <input type="text" id="opened" required placeholder="dd-mm-yyyy" class="w-full porto-input rounded-xl px-3.5 text-sm">
                     </div>
                     <div class="field">
                         <span class="field-label">Closed</span>
-                        <input type="text" id="closed" required placeholder="dd/mm/yyyy" class="w-full porto-input rounded-xl px-3.5 text-sm">
+                        <input type="text" id="closed" required placeholder="dd-mm-yyyy" class="w-full porto-input rounded-xl px-3.5 text-sm">
                     </div>
                 </div>
 
@@ -1822,7 +1822,7 @@
         const closedPicker = flatpickr("#closed", {
             dateFormat: "Y-m-d",
             altInput: true,
-            altFormat: "d/m/Y",
+            altFormat: "d-m-Y",
             defaultDate: "today",
             disableMobile: true,
             onChange: function(selectedDates, dateStr) {
@@ -1843,7 +1843,7 @@
         const openedPicker = flatpickr("#opened", {
             dateFormat: "Y-m-d",
             altInput: true,
-            altFormat: "d/m/Y",
+            altFormat: "d-m-Y",
             defaultDate: "today",
             disableMobile: true,
             onChange: function(selectedDates, dateStr) {
