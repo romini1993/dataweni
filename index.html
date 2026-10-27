@@ -133,7 +133,7 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* Toggle Long / Short (form & modal edit) */
+        /* Toggle Buy / Sell (form & modal edit) */
         .side-toggle { display: flex; gap: 4px; padding: 4px; }
         .field .side-toggle { padding: 4px; height: 100%; }
         .side-btn {
@@ -1233,8 +1233,8 @@
                 <div class="field">
                     <span class="field-label">Side</span>
                     <div class="side-toggle porto-input rounded-xl">
-                        <button type="button" id="sideLongBtn" class="side-btn on-long" onclick="setFormSide('Long')">Long</button>
-                        <button type="button" id="sideShortBtn" class="side-btn" onclick="setFormSide('Short')">Short</button>
+                        <button type="button" id="sideLongBtn" class="side-btn on-long" onclick="setFormSide('Buy')">Buy</button>
+                        <button type="button" id="sideShortBtn" class="side-btn" onclick="setFormSide('Sell')">Sell</button>
                     </div>
                 </div>
                 </div>
@@ -1426,8 +1426,8 @@
             <div>
                 <label class="block text-xs font-medium text-[var(--text-dim)] mb-1.5">Side</label>
                 <div class="side-toggle porto-input rounded-xl">
-                    <button type="button" id="editSideLongBtn" class="side-btn on-long" onclick="setEditSide('Long')">Long</button>
-                    <button type="button" id="editSideShortBtn" class="side-btn" onclick="setEditSide('Short')">Short</button>
+                    <button type="button" id="editSideLongBtn" class="side-btn on-long" onclick="setEditSide('Buy')">Buy</button>
+                    <button type="button" id="editSideShortBtn" class="side-btn" onclick="setEditSide('Sell')">Sell</button>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-2.5">
@@ -1752,24 +1752,25 @@
         let heatmapYear = now_.getFullYear();
         let heatmapMonth = now_.getMonth();
 
-        // Long / Short: leverage selalu 20x (tidak ada input).
+        // Buy / Sell: leverage selalu 20x (tidak ada input).
         // Side disimpan di Sheet (kolom Side) lewat parameter &side= dan dibaca balik dari
-        // respons API, jadi sama di semua perangkat. Trade lama yang Side-nya kosong dianggap Long.
-        let formSide = 'Long';
-        let editSide = 'Long';
+        // respons API, jadi sama di semua perangkat. Trade lama yang Side-nya kosong dianggap Buy.
+        let formSide = 'Buy';
+        let editSide = 'Buy';
         let tradeSideMap = {};
         try { tradeSideMap = JSON.parse(localStorage.getItem(SIDE_MAP_KEY) || '{}') || {}; } catch (e) { tradeSideMap = {}; }
         function saveSideMap() {
             try { localStorage.setItem(SIDE_MAP_KEY, JSON.stringify(tradeSideMap)); } catch (e) {}
         }
         function getTradeSide(item) {
-            const s = (item && item.side) || 'Long';
-            return String(s).toLowerCase() === 'short' ? 'Short' : 'Long';
+            const s = (item && item.side) || 'Buy';
+            const k = String(s).toLowerCase();
+            return (k === 'sell' || k === 'short') ? 'Sell' : 'Buy';   // 'short' = nilai lama di Sheet
         }
         function paintSide(longBtn, shortBtn, side) {
             if (!longBtn || !shortBtn) return;
-            longBtn.classList.toggle('on-long', side === 'Long');
-            shortBtn.classList.toggle('on-short', side === 'Short');
+            longBtn.classList.toggle('on-long', side === 'Buy');
+            shortBtn.classList.toggle('on-short', side === 'Sell');
         }
         function setFormSide(side) {
             formSide = side;
@@ -2255,7 +2256,7 @@
         }
         function cleanUrl() { const u = new URL(location.href); u.searchParams.delete('p'); return u.toString(); }
 
-        // Hapus semua data akun ini dari HP (sesi, cache, foto, pilihan Long/Short). Data di Sheet tidak tersentuh.
+        // Hapus semua data akun ini dari HP (sesi, cache, foto, pilihan Buy/Sell). Data di Sheet tidak tersentuh.
         function clearAccountLocalData(user) {
             try {
                 const suffix = ':u:' + user;
@@ -2514,7 +2515,7 @@
             const others = Object.keys(SESSIONS).length - 1;
             showDialog({
                 title: 'Keluar dari akun ' + ACTIVE_PROFILE.name + '?',
-                desc: 'Data akun ini di HP (cache, foto, pilihan Long/Short) akan dihapus. Data di Google Sheet tetap aman dan muncul lagi kalau kamu masuk.'
+                desc: 'Data akun ini di HP (cache, foto, pilihan Buy/Sell) akan dihapus. Data di Google Sheet tetap aman dan muncul lagi kalau kamu masuk.'
                     + (others > 0 ? ' Kamu akan pindah ke akun lain yang masih masuk di HP ini.' : ''),
                 okText: 'Keluar',
                 onConfirm: async () => { forceLogout('Kamu sudah keluar dari ' + ACTIVE_PROFILE.name + '.'); }
@@ -2939,7 +2940,7 @@
 
             fetchRealtimeKurs();
             switchTab('rekap', true);
-            setFormSide('Long');
+            setFormSide('Buy');
             let lastTabW = window.innerWidth;
             window.addEventListener('resize', () => {
                 if (window.innerWidth === lastTabW) return;   // keyboard HP (tinggi doang) diabaikan
@@ -3247,10 +3248,10 @@
             const bgCard = isProfit ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5';
             const totalIdr = formatRupiah(pnlNum * currentKursIdr);
 
-            // Badge posisi di samping nama koin: S merah = Short, L hijau = Long
+            // Badge posisi di samping nama koin: S merah = Sell, B hijau = Buy
             const sideName = getTradeSide(item);
-            const sideLetter = sideName === 'Short' ? 'S' : 'L';
-            const sideBg = sideName === 'Short' ? '#F6465D' : '#2EBD85';
+            const sideLetter = sideName === 'Sell' ? 'S' : 'B';
+            const sideBg = sideName === 'Sell' ? '#F6465D' : '#2EBD85';
 
             const shouldAnimate = forceAnimate || animateRows;
             const div = document.createElement('div');
@@ -4054,7 +4055,7 @@
             tsX: 142,       // x jam share (sejajar dengan nama Romini)
             tsY: 130,       // jam share
             titleY: 487,    // pair / judul
-            metaY: 537,     // baris Long | 20x
+            metaY: 537,     // baris Buy | 20x
             pnlBase: 668,   // baseline angka P&L + USDT
             col2X: 503,     // x kolom kanan (Closed / Setara IDR)
             labelY: 749,    // label Opened / Closed
@@ -4202,7 +4203,7 @@
             if (kind === 'trade') {
                 pcDraw(ctx, `${d.pair} Perpetual`, PL.padX, PL.titleY, 700, szTitle, PC.white, PL.maxW);
 
-                const sideColor = d.side === 'Short' ? PC.red : PC.green;
+                const sideColor = d.side === 'Sell' ? PC.red : PC.green;
                 const wSide = pcDraw(ctx, d.side, PL.padX, PL.metaY, 500, szMeta, sideColor);
                 const sepX = PL.padX + wSide + 20;
                 ctx.fillStyle = PC.sep;
