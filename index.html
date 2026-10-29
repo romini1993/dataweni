@@ -1190,7 +1190,7 @@
                 <div class="grid grid-cols-2 gap-2.5">
                 <div class="field">
                     <span class="field-label">Pairs</span>
-                    <input type="text" id="pair" list="pairList" required placeholder="BTCUSDT" onblur="formatPairInput(this)" class="w-full porto-input rounded-xl px-3.5 text-sm uppercase">
+                    <input type="text" id="pair" required placeholder="BTCUSDT" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" onblur="formatPairInput(this)" class="w-full porto-input rounded-xl px-3.5 text-sm uppercase">
                     <datalist id="pairList">
                         <option value="ADAUSDT">
                         <option value="ALGOUSDT">
@@ -5571,11 +5571,54 @@
         // tombol di sebelah judul "Statistik" (kartu Statistik di HP & desktop); stopPropagation supaya kartu tidak ikut berpindah USDT/IDR
         document.querySelectorAll('h2.section-label').forEach(h => {
             if (h.textContent.trim() !== 'Statistik') return;
-            const w = document.createElement('div'); w.className = 'ml-auto flex gap-1.5';
-            const mk = (txt, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'px-2 py-1 rounded-lg text-[10px] font-semibold bg-[var(--surface-2)] border border-[var(--border)] ' + cls; b.onclick = e => { e.stopPropagation(); fn(); }; w.appendChild(b); };
-            mk('Lanjutan', openAdvStats, 'text-amber-400'); mk('Impor', openImport, 'text-slate-200');
+            const w = document.createElement('div'); w.className = 'ml-auto flex gap-3 items-center';
+            const mk = (txt, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'section-label'; b.style.cssText = 'background:none;border:0;padding:4px 0;margin:-4px 0;cursor:pointer;color:' + cls; b.onclick = e => { e.stopPropagation(); fn(); }; w.appendChild(b); };
+            mk('Lanjutan', openAdvStats, '#fbbf24'); mk('Impor', openImport, 'var(--text-dim)');
             h.parentElement.appendChild(w);
         });
+    })();
+    </script>
+<!-- PERBAIKAN input Pairs: daftar saran sendiri menggantikan saran bawaan browser -->
+    <style>
+        #pair:-webkit-autofill, #pair:-webkit-autofill:hover, #pair:-webkit-autofill:focus { -webkit-text-fill-color: var(--text); caret-color: var(--text); box-shadow: 0 0 0 1000px var(--bg) inset; transition: background-color 99999s ease-out 0s; }
+        #pairSuggest div[data-v] { padding: 9px 12px; font-size: 13px; border-radius: 8px; cursor: pointer; }
+        #pairSuggest div[data-v]:hover, #pairSuggest div[data-v].on { background: var(--surface-2); }
+    </style>
+    <script>
+    (function () {
+        const inp = document.getElementById('pair'); if (!inp) return;
+        const dl = document.getElementById('pairList');
+        const base = dl ? Array.from(dl.options).map(o => o.value.toUpperCase()) : [];
+        inp.removeAttribute('list');                                      // tidak memakai datalist bawaan browser lagi
+        const box = document.createElement('div'); box.id = 'pairSuggest';
+        box.className = 'hidden absolute left-0 right-0 z-30 porto-card rounded-xl overflow-y-auto custom-scroll';
+        box.style.cssText = 'top:calc(100% + 4px);max-height:11rem;padding:4px';
+        inp.parentElement.appendChild(box);
+        function pool() {                                                 // pair yang paling sering dipakai dulu, lalu daftar koin bawaan
+            let h = []; try { h = cachedGlobalResponse.history || []; } catch (e) {}
+            const cnt = {}; h.forEach(t => { const k = String(t.pair || '').toUpperCase(); if (k) cnt[k] = (cnt[k] || 0) + 1; });
+            const used = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+            return used.concat(base.filter(x => !(x in cnt)).sort());
+        }
+        function show() {
+            const q = inp.value.trim().toUpperCase(), all = pool();
+            const m = (q ? all.filter(x => x.startsWith(q)).concat(all.filter(x => !x.startsWith(q) && x.includes(q))) : all).slice(0, 8);
+            if (!m.length || (m.length === 1 && m[0] === q)) { box.classList.add('hidden'); return; }
+            box.innerHTML = m.map(x => `<div data-v="${x}" class="num">${x}</div>`).join('');
+            box.classList.remove('hidden');
+        }
+        const hide = () => box.classList.add('hidden');
+        inp.addEventListener('input', show);
+        inp.addEventListener('focus', show);
+        inp.addEventListener('blur', () => setTimeout(hide, 120));
+        inp.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+        box.addEventListener('mousedown', e => e.preventDefault());       // menjaga fokus di kolom, jadi keyboard HP tidak tertutup
+        box.addEventListener('pointerdown', e => {
+            const d = e.target.closest('[data-v]'); if (!d) return;
+            e.preventDefault(); inp.value = d.dataset.v; hide();
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        document.addEventListener('pointerdown', e => { if (e.target !== inp && !box.contains(e.target)) hide(); });
     })();
     </script>
 </body>
