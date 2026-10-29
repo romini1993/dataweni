@@ -5572,7 +5572,7 @@
         document.querySelectorAll('h2.section-label').forEach(h => {
             if (h.textContent.trim() !== 'Statistik') return;
             const w = document.createElement('div'); w.className = 'ml-auto flex gap-3 items-center';
-            const mk = (txt, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'section-label'; b.style.cssText = 'background:none;border:0;padding:4px 0;margin:-4px 0;cursor:pointer;color:' + cls; b.onclick = e => { e.stopPropagation(); fn(); }; w.appendChild(b); };
+            const mk = (txt, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'section-label'; b.style.cssText = 'background:none;border:0;padding:4px 0;margin:-4px 0;cursor:pointer;color:' + cls; const cs = getComputedStyle(h); ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform'].forEach(k => { if (cs[k]) b.style[k] = cs[k]; }); b.onclick = e => { e.stopPropagation(); fn(); }; w.appendChild(b); };
             mk('Lanjutan', openAdvStats, '#fbbf24'); mk('Impor', openImport, 'var(--text-dim)');
             h.parentElement.appendChild(w);
         });
@@ -5619,6 +5619,44 @@
             inp.dispatchEvent(new Event('input', { bubbles: true }));
         });
         document.addEventListener('pointerdown', e => { if (e.target !== inp && !box.contains(e.target)) hide(); });
+    })();
+    </script>
+<!-- PERBAIKAN keyboard PC: Enter = Simpan/Tambah, Esc = Tutup, di modal yang sebelumnya belum punya -->
+    <script>
+    (function () {
+        const $ = id => document.getElementById(id);
+        const isOpen = id => { const e = $(id); return !!e && !e.classList.contains('hidden'); };
+        // dipasang di fase capture supaya modal paling atas (z-index tinggi) diproses lebih dulu dan Esc tidak ikut menutup modal di bawahnya
+        document.addEventListener('keydown', e => {
+            if (e.isComposing) return;
+            if (e.key === 'Escape') {
+                if (document.querySelector('.flatpickr-calendar.open')) return;           // kalender yang terbuka ditutup oleh kalendernya sendiri
+                if (isOpen('advStatsModal')) { $('advStatsModal').classList.add('hidden'); e.stopImmediatePropagation(); return; }
+                if (isOpen('importModal')) { if (!window.__impBusy) $('importModal').classList.add('hidden'); e.stopImmediatePropagation(); return; }
+                const pop = $('fltDatePop'); if (pop && !pop.classList.contains('hidden')) { pop.classList.add('hidden'); e.stopImmediatePropagation(); }
+                return;
+            }
+            if (e.key !== 'Enter' || e.shiftKey || e.altKey) return;
+            if (document.querySelector('.flatpickr-calendar.open')) return;               // Enter saat kalender terbuka = urusan kalender
+            const t = e.target, tag = t && t.tagName;
+            // modal hapus: Enter = Hapus. Tidak berlaku kalau fokus ada di tombol (mis. Batal, Enter di situ = tombol itu) dan diabaikan saat tombol Enter ditahan (e.repeat),
+            // supaya Enter yang menahan/membuka modal ini tidak langsung menghapus tanpa sempat terlihat.
+            if (isOpen('deleteModal')) {
+                if (!e.repeat && tag !== 'BUTTON' && tag !== 'A') { e.preventDefault(); const b = $('confirmDeleteBtn'); if (b && !b.disabled) b.click(); }
+                return;
+            }
+            // modal edit trade: Enter di kolom isian = Simpan
+            if (isOpen('editModal') && $('editModal').contains(t) && tag === 'INPUT') {
+                e.preventDefault(); if (t.blur) t.blur();                                // blur supaya ketikan di kolom tanggal ikut terbaca
+                const b = $('confirmEditBtn'); if (b && !b.disabled) b.click();
+                return;
+            }
+            // impor massal: Enter di kolom isian manual = Tambah ke daftar; Ctrl+Enter di kotak tempel = Impor
+            if (isOpen('importModal') && $('importModal').contains(t)) {
+                if (tag === 'TEXTAREA') { if (e.ctrlKey || e.metaKey) { e.preventDefault(); const r = $('impRun'); if (r && !r.disabled) r.click(); } return; }
+                if (tag === 'INPUT' && t.type !== 'checkbox') { e.preventDefault(); $('impAdd').click(); }
+            }
+        }, true);
     })();
     </script>
 </body>
